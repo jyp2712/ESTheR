@@ -1,10 +1,4 @@
-/*
- * CPU.c
- *
- *  Created on: 29/3/2017
- *      Author: utnso
- */
-
+#include <commons/config.h>
 
 int main(){
 
