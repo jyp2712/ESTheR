@@ -143,6 +143,8 @@ void create_serverSocket(int* listenningSocket, char* port){
 	getaddrinfo(NULL, port, &hints, &serverInfo);
 	*listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
+	printf("Servidor esperando conexiones...\n");
+
 	bind(*listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
 
 	freeaddrinfo(serverInfo);
