@@ -1,18 +1,7 @@
 #include <commons/config.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct{
-	char* puerto;
-	int marcos;
-	int marco_size;
-	int entradas_cache;
-	int cache_x_proc;
-	char* reemplazo_cache;
-	int retardo_memoria;
-}t_memoria;
-
-void leerConfiguracionMemoria(t_memoria* memoria);
+#include "Memoria.h"
 
 int main(){
 

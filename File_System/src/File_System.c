@@ -1,13 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <commons/config.h>
-
-typedef struct{
-	char* puerto;
-	char* punto_montaje;
-}t_file_system;
-
-void leerConfiguracionFileSystem(t_file_system* file_system);
+#include "File_System.h"
 
 int main(){
 

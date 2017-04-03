@@ -6,19 +6,8 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <string.h>
+#include "Consola.h"
 
-#define PACKAGESIZE 1024
-#define BACKLOG 5
-
-typedef struct{
-	char* ip_kernel;
-	char* puerto_kernel;
-}t_consola;
-
-void leerConfiguracionConsola(t_consola* consola);
-void create_serverSocket(int* listenningSocket, char* port);
-void accept_connection(int listenningSocket, int* clientSocket);
-void create_socketClient(int* serverSocket, char* ip, char* port);
 
 int main(){
 
