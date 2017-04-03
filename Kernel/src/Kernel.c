@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
 
 /* ******************************************************************
@@ -38,6 +38,9 @@ typedef struct{
  * *****************************************************************/
 
 void leerConfiguracionKernel(t_kernel*);
+void create_serverSocket(int* listenningSocket, char* port);
+void accept_connection(int listenningSocket, int* clientSocket);
+void create_socketClient(int* serverSocket, char* ip, char* port);
 
 
 /* ******************************************************************
@@ -50,11 +53,11 @@ int main(){
 
 	leerConfiguracionKernel(kernel); //Leo configuracion metadata y la guardo en la estructura kernel
 
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
-
-	struct sockaddr_in addr;			// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
+	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
+
+	int listenningSocket;
+	create_serverSocket(&listenningSocket, kernel->puerto_prog);
 
 	//Atributos para select
 	fd_set master;		// conjunto maestro de descriptores de fichero
@@ -63,33 +66,12 @@ int main(){
 	int newfd;			// descriptor de socket de nueva conexión aceptada
 	int i;
 	int nbytes;
-
-	FD_ZERO(&master);	// borra los conjuntos maestro y temporal
-	FD_ZERO(&read_fds);
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_socktype = SOCK_STREAM;
-
-	getaddrinfo(NULL, kernel->puerto_prog, &hints, &serverInfo);
-
-	int listenningSocket;
-	listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-
-	printf("Servidor esperando conexiones...\n");
-
-	bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-	freeaddrinfo(serverInfo); // Ya no lo vamos a necesitar
-
-	listen(listenningSocket, BACKLOG);
-
-	// añadir listener al conjunto maestro
-	FD_SET(listenningSocket, &master);
-	// seguir la pista del descriptor de fichero mayor
-	fdmax = listenningSocket; // por ahora es éste
-
 	char package[PACKAGESIZE];
+
+	FD_ZERO(&master);					// borra los conjuntos maestro y temporal
+	FD_ZERO(&read_fds);
+	FD_SET(listenningSocket, &master);	// añadir listener al conjunto maestro
+	fdmax = listenningSocket; 			// seguir la pista del descriptor de fichero mayor, por ahora es este
 
 	//------------Comienzo del select------------
 	for(;;) {
@@ -138,7 +120,6 @@ int main(){
 	}
 
 	close(listenningSocket);
-
 	free(kernel);
 
 	return 0;
@@ -148,6 +129,53 @@ int main(){
 /* ******************************************************************
  *                     		FUNCIONES
  * *****************************************************************/
+
+void create_serverSocket(int* listenningSocket, char* port){
+
+	struct addrinfo hints;
+	struct addrinfo *serverInfo;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_STREAM;
+
+	getaddrinfo(NULL, port, &hints, &serverInfo);
+	*listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+
+	bind(*listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
+
+	freeaddrinfo(serverInfo);
+
+	listen(*listenningSocket, BACKLOG);
+}
+
+void accept_connection(int listenningSocket, int* clientSocket){
+
+	struct sockaddr_in addr;
+
+	socklen_t addrlen = sizeof(addr);
+
+	*clientSocket = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
+}
+
+void create_socketClient(int* serverSocket, char* ip, char* port){
+
+	struct addrinfo hints;
+	struct addrinfo *serverInfo;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+
+	getaddrinfo(ip, port, &hints, &serverInfo);
+
+	*serverSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+
+	connect(*serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
+
+	freeaddrinfo(serverInfo);
+}
 
 void leerConfiguracionKernel(t_kernel* kernel){
 

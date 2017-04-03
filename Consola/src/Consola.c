@@ -8,6 +8,7 @@
 #include <string.h>
 
 #define PACKAGESIZE 1024
+#define BACKLOG 5
 
 typedef struct{
 	char* ip_kernel;
@@ -15,12 +16,67 @@ typedef struct{
 }t_consola;
 
 void leerConfiguracionConsola(t_consola* consola);
+void create_serverSocket(int* listenningSocket, char* port);
+void accept_connection(int listenningSocket, int* clientSocket);
+void create_socketClient(int* serverSocket, char* ip, char* port);
 
 int main(){
 
 	t_consola* consola = (t_consola*) malloc(sizeof(t_consola));
 
 	leerConfiguracionConsola(consola);
+
+	int serverKernel;
+
+	printf("Conectandose al servidor...\n");
+	create_socketClient(&serverKernel, consola->ip_kernel, consola->puerto_kernel);
+	printf("Conectado al servidor. Ya puede enviar mensajes. Escriba 'exit' para salir\n");
+
+//------------Envio de mensajes al servidor------------
+	int enviar = 1;
+	char message[PACKAGESIZE];
+
+	while(enviar){
+		fgets(message, PACKAGESIZE, stdin);
+		if (!strcmp(message,"exit\n")) enviar = 0;
+		if (enviar) send(serverKernel, message, strlen(message) + 1, 0);
+	}
+
+	free(consola);
+	close(serverKernel);
+	return 0;
+}
+
+void create_serverSocket(int* listenningSocket, char* port){
+
+	struct addrinfo hints;
+	struct addrinfo *serverInfo;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_STREAM;
+
+	getaddrinfo(NULL, port, &hints, &serverInfo);
+	*listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+
+	bind(*listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
+
+	freeaddrinfo(serverInfo);
+
+	listen(*listenningSocket, BACKLOG);
+}
+
+void accept_connection(int listenningSocket, int* clientSocket){
+
+	struct sockaddr_in addr;
+
+	socklen_t addrlen = sizeof(addr);
+
+	*clientSocket = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
+}
+
+void create_socketClient(int* serverSocket, char* ip, char* port){
 
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
@@ -29,30 +85,13 @@ int main(){
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	getaddrinfo(consola->ip_kernel, consola->puerto_kernel, &hints, &serverInfo);
+	getaddrinfo(ip, port, &hints, &serverInfo);
 
-	int serverSocket;
-	serverSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+	*serverSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
-	connect(serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
+	connect(*serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
+
 	freeaddrinfo(serverInfo);
-
-	int enviar = 1;
-	char message[PACKAGESIZE];
-
-	printf("Conectado al servidor. Ya puede enviar mensajes. Escriba 'exit' para salir\n");
-
-	while(enviar){
-		fgets(message, PACKAGESIZE, stdin);			// Lee una linea en el stdin hasta encontrar un \n (y lo incluye) o llegar a PACKAGESIZE.
-		if (!strcmp(message,"exit\n")) enviar = 0;	// Chequeo que el usuario no quiera salir
-		if (enviar) send(serverSocket, message, strlen(message) + 1, 0); 	// Solo envio si el usuario no quiere salir.
-	}
-
-	close(serverSocket);
-
-	free(consola);
-
-	return 0;
 }
 
 void leerConfiguracionConsola(t_consola* consola){
