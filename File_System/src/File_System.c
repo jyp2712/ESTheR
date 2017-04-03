@@ -2,24 +2,33 @@
 #include <stdio.h>
 #include <commons/config.h>
 
-typedef struct t_file_system{
-	int puerto;
+typedef struct{
+	char* puerto;
 	char* punto_montaje;
 }t_file_system;
 
-int main(){
+void leerConfiguracionFileSystem(t_file_system* file_system);
 
-	t_config* config = config_create("./metadata");
+int main(){
 
 	t_file_system* file_system = (t_file_system*) malloc(sizeof(t_file_system));
 
-	file_system->puerto = config_get_int_value(config, "PUERTO");
+	leerConfiguracionFileSystem(file_system);
+
+	free(file_system);
+
+	return 0;
+}
+
+void leerConfiguracionFileSystem(t_file_system* file_system){
+
+	t_config* config = config_create("../metadata");
+
+	file_system->puerto = config_get_string_value(config, "PUERTO");
 	file_system->punto_montaje = config_get_string_value(config, "PUNTO_MONTAJE");
 
 	printf("---------------Mi configuracion---------------\n");
-	printf("PUERTO: %i\n", file_system->puerto);
+	printf("PUERTO: %s\n", file_system->puerto);
 	printf("PUNTO_MONTAJE: %s\n", file_system->punto_montaje);
 	printf("----------------------------------------------\n");
-
-	return 0;
 }

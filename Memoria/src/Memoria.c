@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct t_memoria{
-	int puerto;
+typedef struct{
+	char* puerto;
 	int marcos;
 	int marco_size;
 	int entradas_cache;
@@ -12,13 +12,25 @@ typedef struct t_memoria{
 	int retardo_memoria;
 }t_memoria;
 
-int main(){
+void leerConfiguracionMemoria(t_memoria* memoria);
 
-	t_config* config = config_create("./metadata");
+int main(){
 
 	t_memoria* memoria = (t_memoria*) malloc(sizeof(t_memoria));
 
-	memoria->puerto = config_get_int_value(config, "PUERTO");
+	leerConfiguracionMemoria(memoria);
+
+	free(memoria);
+
+	return 0;
+
+}
+
+void leerConfiguracionMemoria(t_memoria* memoria){
+
+	t_config* config = config_create("../metadata");
+
+	memoria->puerto = config_get_string_value(config, "PUERTO");
 	memoria->marcos = config_get_int_value(config, "MARCOS");
 	memoria->marco_size = config_get_int_value(config, "MARCO_SIZE");
 	memoria->entradas_cache = config_get_int_value(config, "ENTRADAS_CACHE");
@@ -27,7 +39,7 @@ int main(){
 	memoria->retardo_memoria = config_get_int_value(config, "RETARDO_MEMORIA");
 
 	printf("---------------Mi configuracion---------------\n");
-	printf("PUERTO: %i\n", memoria->puerto);
+	printf("PUERTO: %s\n", memoria->puerto);
 	printf("MARCOS: %i\n", memoria->marcos);
 	printf("MARCO_SIZE: %i\n", memoria->marco_size);
 	printf("ENTRADAS_CACHE: %i\n", memoria->entradas_cache);
@@ -35,7 +47,4 @@ int main(){
 	printf("REEMPLAZO_CACHE: %s\n", memoria->reemplazo_cache);
 	printf("RETARDO_MEMORIA: %i\n", memoria->retardo_memoria);
 	printf("----------------------------------------------\n");
-
-	return 0;
-
 }
