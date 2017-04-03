@@ -10,11 +10,18 @@
 #include <unistd.h>
 #include "Kernel.h"
 
-int main(){
+int main(int argc, char **argv){
+
+	if(argc == 1){
+		printf("Falta Indicar ruta de archivo de configuracion\n");
+		abort();
+	}
+
+	char* path = argv[1];
 
 	t_kernel* kernel = (t_kernel*) malloc(sizeof(t_kernel)); // Reservo memoria para la estructura del kernel
 
-	leerConfiguracionKernel(kernel); //Leo configuracion metadata y la guardo en la estructura kernel
+	leerConfiguracionKernel(kernel, path); //Leo configuracion metadata y la guardo en la estructura kernel
 
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
@@ -142,9 +149,9 @@ void create_socketClient(int* serverSocket, char* ip, char* port){
 	freeaddrinfo(serverInfo);
 }
 
-void leerConfiguracionKernel(t_kernel* kernel){
+void leerConfiguracionKernel(t_kernel* kernel, char* path){
 
-		t_config* config = config_create("../metadata");
+		t_config* config = config_create(path);
 
 		kernel->puerto_prog = config_get_string_value(config, "PUERTO_PROG");
 		kernel->puerto_cpu = config_get_string_value(config, "PUERTO_CPU");

@@ -18,6 +18,6 @@ typedef struct{
 	int retardo_memoria;
 }t_memoria;
 
-void leerConfiguracionMemoria(t_memoria* memoria);
+void leerConfiguracionMemoria(t_memoria* memoria, char* path);
 
 #endif /* MEMORIA_H_ */

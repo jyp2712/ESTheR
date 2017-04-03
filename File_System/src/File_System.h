@@ -13,6 +13,6 @@ typedef struct{
 	char* punto_montaje;
 }t_file_system;
 
-void leerConfiguracionFileSystem(t_file_system* file_system);
+void leerConfiguracionFileSystem(t_file_system* file_system, char* path);
 
 #endif /* FILE_SYSTEM_H_ */

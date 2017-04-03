@@ -3,11 +3,18 @@
 #include <stdlib.h>
 #include "Memoria.h"
 
-int main(){
+int main(int argc, char **argv){
+
+	if(argc == 1){
+		printf("Falta Indicar ruta de archivo de configuracion\n");
+		abort();
+	}
+
+	char* path = argv[1];
 
 	t_memoria* memoria = (t_memoria*) malloc(sizeof(t_memoria));
 
-	leerConfiguracionMemoria(memoria);
+	leerConfiguracionMemoria(memoria, path);
 
 	free(memoria);
 
@@ -15,9 +22,9 @@ int main(){
 
 }
 
-void leerConfiguracionMemoria(t_memoria* memoria){
+void leerConfiguracionMemoria(t_memoria* memoria, char* path){
 
-	t_config* config = config_create("../metadata");
+	t_config* config = config_create(path);
 
 	memoria->puerto = config_get_string_value(config, "PUERTO");
 	memoria->marcos = config_get_int_value(config, "MARCOS");

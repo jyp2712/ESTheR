@@ -9,11 +9,18 @@
 #include "Consola.h"
 
 
-int main(){
+int main(int argc, char **argv){
+
+	if(argc == 1){
+		printf("Falta Indicar ruta de archivo de configuracion\n");
+		abort();
+	}
+
+	char* path = argv[1];
 
 	t_consola* consola = (t_consola*) malloc(sizeof(t_consola));
 
-	leerConfiguracionConsola(consola);
+	leerConfiguracionConsola(consola, path);
 
 	int serverKernel;
 
@@ -83,9 +90,9 @@ void create_socketClient(int* serverSocket, char* ip, char* port){
 	freeaddrinfo(serverInfo);
 }
 
-void leerConfiguracionConsola(t_consola* consola){
+void leerConfiguracionConsola(t_consola* consola, char* path){
 
-	t_config* config = config_create("../metadata");
+	t_config* config = config_create(path);
 
 	consola->ip_kernel = config_get_string_value(config, "IP_KERNEL");
 	consola->puerto_kernel = config_get_string_value(config, "PUERTO_KERNEL");

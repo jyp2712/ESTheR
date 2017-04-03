@@ -26,7 +26,7 @@ typedef struct{
 	int stack_size;
 }t_kernel;
 
-void leerConfiguracionKernel(t_kernel*);
+void leerConfiguracionKernel(t_kernel*, char* path);
 void create_serverSocket(int* listenningSocket, char* port);
 void accept_connection(int listenningSocket, int* clientSocket);
 void create_socketClient(int* serverSocket, char* ip, char* port);
