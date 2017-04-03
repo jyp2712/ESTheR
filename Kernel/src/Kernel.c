@@ -89,28 +89,30 @@ void crearConexion (){
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = INADDR_ANY;
-	direccionServidor.sin_port = htons(8080);
+	direccionServidor.sin_port = htons(8080); /* Puerto para recibir conexiones */
 
-	int servidor = socket(AF_INET, SOCK_STREAM, 0);
+	int servidor = socket(AF_INET, SOCK_STREAM, 0); /* Protocolo TCP/IP */
 
 	int activado = 1;
-	setsockopt(servidor, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
+	setsockopt(servidor, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado)); /* Reutilizar socket que se hayan cerrado recientemente (sino hay que esperar 2 minutos ms o menos)) */
 
+	/* Asociar el socket al servidor
+	   Además valida que no haya otro proceso en el mismo puerto*/
 	if (bind(servidor, (void*) &direccionServidor, sizeof(direccionServidor)) != 0) {
 		perror("Falló el bind");
 		return;
 	}
 
-	listen(servidor, 100);
+	listen(servidor, 100);/* Cantidad de peticiones que pone en cola para aguardar conexión */
 
 	struct sockaddr_in direccionCliente;
 	unsigned int tamanioDireccion;
-	int cliente = accept(servidor, (void*) &direccionCliente, &tamanioDireccion);
-
-	char* buffer = malloc(1000);
+	int cliente = accept(servidor, (void*) &direccionCliente, &tamanioDireccion); /* Aceptar conexión y devuelve el N° de socket */
+	
+	char* buffer = malloc(1000); /* Buffer para almacenar el mensaje */
 
 	while (1) {
-		int bytesRecibidos = recv(cliente, buffer, 1000, 0);
+		int bytesRecibidos = recv(cliente, buffer, 1000, 0); /* recv devuelve los bytes recibidos, devuelve negativo si el cliente se desconectó */
 		if (bytesRecibidos <= 0) {
 			perror("Cliente Desconectado");
 			return;
