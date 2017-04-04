@@ -95,7 +95,7 @@ void create_socketClient(int* serverSocket, char* ip, char* port){
 
 void leerConfiguracionCPU(t_cpu* cpu, char* path){
 
-	t_config* config = config_create("../metadata");
+	t_config* config = config_create(path);
 
 	cpu->ip_kernel = config_get_string_value(config, "IP_KERNEL");
 	cpu->puerto_kernel = config_get_string_value(config, "PUERTO_KERNEL");
