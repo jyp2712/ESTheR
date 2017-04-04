@@ -23,4 +23,10 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<variableList>
+		<variable>
+			<name>COMMON</name>
+			<value>file:/home/utnso/git/tp-2017-1c-System-Buzz/Common</value>
+		</variable>
+	</variableList>
 </projectDescription>
