@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "Consola.h"
+#include "../../Common/sockets.h"
 
 
 int main(int argc, char **argv){
@@ -70,24 +71,6 @@ void accept_connection(int listenningSocket, int* clientSocket){
 	socklen_t addrlen = sizeof(addr);
 
 	*clientSocket = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
-}
-
-void create_socketClient(int* serverSocket, char* ip, char* port){
-
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-
-	getaddrinfo(ip, port, &hints, &serverInfo);
-
-	*serverSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-
-	connect(*serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
-
-	freeaddrinfo(serverInfo);
 }
 
 void leerConfiguracionConsola(t_consola* consola, char* path){
