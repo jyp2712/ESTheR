@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "Memoria.h"
+#include "../../Common/sockets.h"
 
 int main(int argc, char **argv){
 

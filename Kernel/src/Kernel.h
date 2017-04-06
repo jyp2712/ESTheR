@@ -8,7 +8,6 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
-#define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
 
 typedef struct{
@@ -27,8 +26,5 @@ typedef struct{
 }t_kernel;
 
 void leerConfiguracionKernel(t_kernel*, char* path);
-void create_serverSocket(int* listenningSocket, char* port);
-void accept_connection(int listenningSocket, int* clientSocket);
-void create_socketClient(int* serverSocket, char* ip, char* port);
 
 #endif /* KERNEL_H_ */

@@ -9,7 +9,6 @@
 #include "Consola.h"
 #include "../../Common/sockets.h"
 
-
 int main(int argc, char **argv){
 
 	if(argc == 1){
@@ -42,35 +41,6 @@ int main(int argc, char **argv){
 	free(consola);
 	close(serverKernel);
 	return 0;
-}
-
-void create_serverSocket(int* listenningSocket, char* port){
-
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_socktype = SOCK_STREAM;
-
-	getaddrinfo(NULL, port, &hints, &serverInfo);
-	*listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-
-	bind(*listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-
-	freeaddrinfo(serverInfo);
-
-	listen(*listenningSocket, BACKLOG);
-}
-
-void accept_connection(int listenningSocket, int* clientSocket){
-
-	struct sockaddr_in addr;
-
-	socklen_t addrlen = sizeof(addr);
-
-	*clientSocket = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 }
 
 void leerConfiguracionConsola(t_consola* consola, char* path){

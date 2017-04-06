@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "Kernel.h"
+#include "../../Common/sockets.h"
 
 int main(int argc, char **argv){
 
@@ -94,59 +95,6 @@ int main(int argc, char **argv){
 
 	return 0;
 
-}
-
-/* ******************************************************************
- *                     		FUNCIONES
- * *****************************************************************/
-
-void create_serverSocket(int* listenningSocket, char* port){
-
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_socktype = SOCK_STREAM;
-
-	getaddrinfo(NULL, port, &hints, &serverInfo);
-	*listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-
-	printf("Servidor esperando conexiones...\n");
-
-	bind(*listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-
-	freeaddrinfo(serverInfo);
-
-	listen(*listenningSocket, BACKLOG);
-}
-
-void accept_connection(int listenningSocket, int* clientSocket){
-
-	struct sockaddr_in addr;
-
-	socklen_t addrlen = sizeof(addr);
-
-	*clientSocket = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
-}
-
-void create_socketClient(int* serverSocket, char* ip, char* port){
-
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-
-	getaddrinfo(ip, port, &hints, &serverInfo);
-
-	*serverSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-
-	connect(*serverSocket, serverInfo->ai_addr, serverInfo->ai_addrlen);
-
-	freeaddrinfo(serverInfo);
 }
 
 void leerConfiguracionKernel(t_kernel* kernel, char* path){

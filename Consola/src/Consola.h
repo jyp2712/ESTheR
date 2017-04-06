@@ -17,8 +17,6 @@ typedef struct{
 }t_consola;
 
 void leerConfiguracionConsola(t_consola* consola, char* path);
-void create_serverSocket(int* listenningSocket, char* port);
-void accept_connection(int listenningSocket, int* clientSocket);
-void create_socketClient(int* serverSocket, char* ip, char* port);
+
 
 #endif /* CONSOLA_H_ */

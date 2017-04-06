@@ -17,8 +17,5 @@ typedef struct{
 }t_cpu;
 
 void leerConfiguracionCPU(t_cpu* cpu, char* path);
-void create_serverSocket(int* listenningSocket, char* port);
-void accept_connection(int listenningSocket, int* clientSocket);
-void create_socketClient(int* serverSocket, char* ip, char* port);
 
 #endif /* CPU_H_ */
