@@ -167,18 +167,19 @@ void socket_select(const char *port, int portServer1, int portServer2) {
 					socket_close(i);
 					FD_CLR(i, &all_fds);
 					continue;
-				}
-				printf ("%s", buffer);
-				socket_send (buffer, portServer1);
-				socket_send (buffer, portServer2);
-				for(int j = 0; j < k; j++) {
-					socket_send (buffer, clientes[k]);	
+				}else{
+					printf ("%s", buffer);
+					socket_send (buffer, portServer1);
+					socket_send (buffer, portServer2);
+					for(int j = 0; j < k; j++) {
+						socket_send (buffer, clientes[k]);	
 					}
 				}
 			}
 		}
 	}
 }
+
 
 void socket_poll(const char *port) {
 	char buffer[SOCKET_BUFFER_CAPACITY];
