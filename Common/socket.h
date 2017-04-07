@@ -47,10 +47,10 @@ ssize_t socket_receive(char *message, int sockfd);
 
 /**
  * Crea un servidor multicliente usando select(), acepta conexiones a un cierto
- * puerto, recibe datos y los replica a todos los clientes conectados.
+ * puerto, recibe datos y los replica a todos los clientes conectados y servidores.
  * @param port Puerto de escucha.
  */
-void socket_select(const char *port);
+void socket_select(const char *port, int portServer1, int portServer2);
 
 /**
  * Crea un servidor multicliente usando poll(), acepta conexiones a un cierto
