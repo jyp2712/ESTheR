@@ -16,11 +16,8 @@ int main(int argc, char **argv) {
 //------------Envio de mensajes al servidor------------
 	char message[SOCKET_BUFFER_CAPACITY];
 
-	while(true) {
-		fgets(message, SOCKET_BUFFER_CAPACITY, stdin);
-		message[strcspn(message, "\n")] = '\0';
-		if(!strcmp(message, "exit")) break;
-		socket_send(message, kernel_fd);
+	while(socket_recive (message, kernel_fd) > 0) {
+		printf ("Message received: \"%s\"\n", message);
 	}
 
 	free(cpu);
