@@ -132,13 +132,16 @@ ssize_t socket_receive(char *message, int sockfd) {
 	return bytes_received;
 }
 
-void socket_select(const char *port) {
+void socket_select(const char *port, int portServer1, int portServer2) {
 	char buffer[SOCKET_BUFFER_CAPACITY];
 
 	fd_set all_fds, read_fds;
 	FD_ZERO(&all_fds);
 	FD_ZERO(&read_fds);
-
+	
+	int clientes [100];
+	int k = 0;
+	
 	int sv_sock = first_valid_socket(NULL, port);
 
 	FD_SET(sv_sock, &all_fds);
@@ -156,6 +159,8 @@ void socket_select(const char *port) {
 				FD_SET(cli_sock, &all_fds);
 				if(cli_sock > fdmax) {
 					fdmax = cli_sock;
+					clientes[k]=cli_sock;
+					k++;
 				}
 			} else {
 				if(socket_receive(buffer, i) == 0) {
@@ -163,10 +168,11 @@ void socket_select(const char *port) {
 					FD_CLR(i, &all_fds);
 					continue;
 				}
-
-				for(int j = 0; j <= fdmax; j++) {
-					if(FD_ISSET(j, &all_fds) && j != sv_sock && j != i) {
-						socket_send(buffer, j);
+				printf ("%s", buffer);
+				socket_send (buffer, portServer1);
+				socket_send (buffer, portServer2);
+				for(int j = 0; j < k; j++) {
+					socket_send (buffer, clientes[k]);	
 					}
 				}
 			}
