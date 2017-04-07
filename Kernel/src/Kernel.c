@@ -1,100 +1,24 @@
-#include <commons/collections/list.h>
 #include <commons/config.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <string.h>
-#include <unistd.h>
+#include "utils.h"
+#include "socket.h"
 #include "Kernel.h"
-#include "../../Common/sockets.h"
 
-int main(int argc, char **argv){
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <sys/select.h>
 
-	if(argc == 1){
-		printf("Falta Indicar ruta de archivo de configuracion\n");
-		abort();
-	}
+int main(int argc, char **argv) {
+	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
-	char* path = argv[1];
+	t_kernel* kernel = malloc(sizeof(t_kernel)); // Reservo memoria para la estructura del kernel
+	leerConfiguracionKernel(kernel, argv[1]); // Leo configuracion metadata y la guardo en la estructura kernel
 
-	t_kernel* kernel = (t_kernel*) malloc(sizeof(t_kernel)); // Reservo memoria para la estructura del kernel
+	socket_select(kernel->puerto_prog);
 
-	leerConfiguracionKernel(kernel, path); //Leo configuracion metadata y la guardo en la estructura kernel
-
-	struct sockaddr_in addr;
-	socklen_t addrlen = sizeof(addr);
-
-	int listenningSocket;
-	create_serverSocket(&listenningSocket, kernel->puerto_prog);
-
-	//Atributos para select
-	fd_set master;		// conjunto maestro de descriptores de fichero
-	fd_set read_fds;	// conjunto temporal de descriptores de fichero para select()
-	int fdmax;			// número máximo de descriptores de fichero
-	int newfd;			// descriptor de socket de nueva conexión aceptada
-	int i;
-	int nbytes;
-	char package[PACKAGESIZE];
-
-	FD_ZERO(&master);					// borra los conjuntos maestro y temporal
-	FD_ZERO(&read_fds);
-	FD_SET(listenningSocket, &master);	// añadir listener al conjunto maestro
-	fdmax = listenningSocket; 			// seguir la pista del descriptor de fichero mayor, por ahora es este
-
-	//------------Comienzo del select------------
-	for(;;) {
-		read_fds = master; // cópialo
-		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
-			perror("select");
-			exit(1);
-		}
-		// explorar conexiones existentes en busca de datos que leer
-		for(i = 0; i <= fdmax; i++) {
-			if (FD_ISSET(i, &read_fds)) { // ¡¡tenemos datos!!
-				if (i == listenningSocket) {
-					// gestionar nuevas conexiones
-					addrlen = sizeof(addr);
-					if ((newfd = accept(listenningSocket, (struct sockaddr*)&addr, &addrlen)) == -1){
-						perror("accept");
-					} else {
-						FD_SET(newfd, &master); // añadir al conjunto maestro
-						if (newfd > fdmax) {
-							// actualizar el máximo
-							fdmax = newfd;
-						}
-						printf("selectserver: new connection from %s on ""socket %d\n", inet_ntoa(addr.sin_addr),newfd);
-					}
-				} else {
-					// gestionar datos de un cliente
-					if ((nbytes = recv(i, (void*)package, PACKAGESIZE, 0)) <= 0) {
-						// error o conexión cerrada por el cliente
-						if (nbytes == 0) {
-							// conexión cerrada
-							printf("selectserver: socket %d hung up\n", i);
-						} else {
-							perror("recv");
-						}
-						close(i);
-						FD_CLR(i, &master); // eliminar del conjunto maestro
-					} else {
-						// tenemos datos de algún cliente
-						if (nbytes != 0){
-							printf("%s", package);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	close(listenningSocket);
 	free(kernel);
-
 	return 0;
-
 }
 
 void leerConfiguracionKernel(t_kernel* kernel, char* path){
@@ -112,7 +36,7 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		kernel->grado_multiprog = config_get_int_value(config, "GRADO_MULTIPROG");
 		kernel->stack_size = config_get_int_value(config, "STACK_SIZE");
 
-		printf("---------------Mi configuracion---------------\n");
+		printf("---------------Mi configuración---------------\n");
 		printf("PUERTO_PROG: %s\n", kernel->puerto_prog);
 		printf("PUNTO_CPU: %s\n", kernel->puerto_cpu);
 		printf("IP_MEMORIA: %s\n", kernel->ip_memoria);

@@ -23,6 +23,13 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Common</name>
+			<type>2</type>
+			<location>/home/utnso/git/tp-2017-1c-System-Buzz/Common</location>
+		</link>
+	</linkedResources>
 	<variableList>
 		<variable>
 			<name>COMMON</name>
