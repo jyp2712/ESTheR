@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 //------------Envio de mensajes al servidor------------
 	char message[SOCKET_BUFFER_CAPACITY];
 
-	while(socket_receive (message, kernel_fd) > 0) {
+	while(socket_receive(message, kernel_fd) > 0) {
 		printf ("Message received: \"%s\"\n", message);
 	}
 

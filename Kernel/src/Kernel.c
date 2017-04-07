@@ -15,11 +15,11 @@ int main(int argc, char **argv) {
 	t_kernel* kernel = malloc(sizeof(t_kernel)); // Reservo memoria para la estructura del kernel
 	leerConfiguracionKernel(kernel, argv[1]); // Leo configuracion metadata y la guardo en la estructura kernel
 	
-	printf ("Conectandose al servidor...\n");
-	int memoria_fd = socket_connect (kernel->ip_memoria, kernel->puerto_memoria);
-	int fs_fd = socket_connect (kernel->ip_fs, kernel->puerto_fs);
-	printf ("Conectado al servidor. Ya puede enviar mensajes.\n");
-	
+	printf("Conectandose al servidor...\n");
+	int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
+	int fs_fd = socket_connect(kernel->ip_fs, kernel->puerto_fs);
+	printf("Conectado al servidor. Ya puede enviar mensajes.\n");
+
 	socket_select(kernel->puerto_prog, memoria_fd, fs_fd);
 
 	free(kernel);

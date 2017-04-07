@@ -4,17 +4,14 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../Common/cdata.c \
 ../Common/socket.c \
 ../Common/utils.c 
 
 OBJS += \
-./Common/cdata.o \
 ./Common/socket.o \
 ./Common/utils.o 
 
 C_DEPS += \
-./Common/cdata.d \
 ./Common/socket.d \
 ./Common/utils.d 
 
