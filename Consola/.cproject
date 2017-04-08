@@ -34,15 +34,9 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.452819850" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1286035357" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/tp-2017-1c-System-Buzz/Common}&quot;"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common"/>
 								</option>
 								<option id="gnu.c.compiler.option.dialect.std.307073107" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
-								<option id="gnu.c.compiler.option.include.files.1151050923" name="Include files (-include)" superClass="gnu.c.compiler.option.include.files" valueType="includeFiles">
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/socket.c"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/socket.h"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/utils.c"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/utils.h"/>
-								</option>
+								<option id="gnu.c.compiler.option.include.files.1151050923" name="Include files (-include)" superClass="gnu.c.compiler.option.include.files" valueType="includeFiles"/>
 								<option id="gnu.c.compiler.option.warnings.pedantic.1297223973" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.extrawarn.1584475257" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.dialect.flags.1417693189" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu11" valueType="string"/>

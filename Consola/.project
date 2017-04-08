@@ -27,13 +27,13 @@
 		<link>
 			<name>Common</name>
 			<type>2</type>
-			<location>/home/utnso/git/tp-2017-1c-System-Buzz/Common</location>
+			<locationURI>Common</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>
 		<variable>
-			<name>COMMON</name>
-			<value>file:/home/utnso/git/tp-2017-1c-System-Buzz/Common</value>
+			<name>Common</name>
+			<value>$%7BPARENT-1-PROJECT_LOC%7D/Common</value>
 		</variable>
 	</variableList>
 </projectDescription>

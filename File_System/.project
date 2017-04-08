@@ -27,7 +27,7 @@
 		<link>
 			<name>Common</name>
 			<type>2</type>
-			<location>/home/utnso/git/tp-2017-1c-System-Buzz/Common</location>
+			<locationURI>PARENT-1-PROJECT_LOC/Common</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>
