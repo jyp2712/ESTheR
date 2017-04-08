@@ -10,15 +10,20 @@ RM := rm -rf
 -include sources.mk
 -include Memoria/src/subdir.mk
 -include Memoria/Debug/src/subdir.mk
+-include Memoria/Debug/Common/subdir.mk
 -include Kernel/src/subdir.mk
 -include Kernel/Debug/src/subdir.mk
+-include Kernel/Debug/Common/subdir.mk
 -include File_System/src/subdir.mk
 -include File_System/Debug/src/subdir.mk
+-include File_System/Debug/Common/subdir.mk
 -include Consola/src/subdir.mk
 -include Consola/Debug/src/subdir.mk
+-include Consola/Debug/Common/subdir.mk
 -include Common/subdir.mk
 -include CPU/src/subdir.mk
 -include CPU/Debug/src/subdir.mk
+-include CPU/Debug/Common/subdir.mk
 -include subdir.mk
 -include objects.mk
 

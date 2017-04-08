@@ -15,13 +15,18 @@ LIBRARIES :=
 SUBDIRS := \
 Memoria/src \
 Memoria/Debug/src \
+Memoria/Debug/Common \
 Kernel/src \
 Kernel/Debug/src \
+Kernel/Debug/Common \
 File_System/src \
 File_System/Debug/src \
+File_System/Debug/Common \
 Consola/src \
 Consola/Debug/src \
+Consola/Debug/Common \
 Common \
 CPU/src \
 CPU/Debug/src \
+CPU/Debug/Common \
 

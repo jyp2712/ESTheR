@@ -29,14 +29,8 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.1152792043" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.125943670" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/tp-2017-1c-System-Buzz/Common}&quot;"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common"/>
 								</option>
-								<option id="gnu.c.compiler.option.include.files.790092931" name="Include files (-include)" superClass="gnu.c.compiler.option.include.files" valueType="includeFiles">
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/socket.c"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/socket.h"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/utils.c"/>
-									<listOptionValue builtIn="false" value="/home/utnso/workspace/tp-2017-1c-System-Buzz/Common/utils.h"/>
-								</option>
+								<option id="gnu.c.compiler.option.include.files.790092931" name="Include files (-include)" superClass="gnu.c.compiler.option.include.files" valueType="includeFiles"/>
 								<option id="gnu.c.compiler.option.dialect.std.404651723" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.warnings.pedantic.1344971584" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" value="true" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.warnings.extrawarn.1266544693" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
