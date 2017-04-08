@@ -8,6 +8,9 @@
 #include <errno.h>
 #include <sys/types.h>
 
+typedef enum {Kernel, Memoria, FS, CPU, Consola} t_proceso;
+
+
 /**
  * Termina el programa normalmente si no se le pasa ningún mensaje de error.
  * De lo contrario, imprime el error por stderr y termina el programa con
