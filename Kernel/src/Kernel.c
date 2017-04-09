@@ -1,4 +1,5 @@
 #include <commons/config.h>
+#include <commons/string.h>
 #include "utils.h"
 #include "socket.h"
 #include "Kernel.h"
@@ -8,6 +9,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
+#include <pthread.h>
+
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
@@ -43,6 +46,9 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		kernel->quantum_sleep = config_get_int_value(config, "QUANTUM_SLEEP");
 		kernel->algoritmo = config_get_string_value(config, "ALGORITMO");
 		kernel->grado_multiprog = config_get_int_value(config, "GRADO_MULTIPROG");
+		char* semaforos = config_get_string_value(config, "SEM_IDS");
+		kernel->sem_ids = string_get_string_as_array (semaforos);
+		kernel->sem_init = config_get_array_value(config, "SEM_INIT");
 		kernel->stack_size = config_get_int_value(config, "STACK_SIZE");
 
 		printf("---------------Mi configuración---------------\n");
@@ -55,8 +61,8 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		printf("QUANTUM: %i\n", kernel->quantum);
 		printf("QUANTUM_SLEEP: %i\n", kernel->quantum_sleep);
 		printf("ALGORITMO: %s\n", kernel->algoritmo);
-		printf("GRADO_MULTIPROG: %i\n", kernel->grado_multiprog);
+		printf("SEM_IDS:[%s, %s ,%s]\n", kernel->sem_ids[0], kernel->sem_ids[1], kernel->sem_ids[2]);
+		printf("SEM_INIT:[%s, %s ,%s]\n", kernel->sem_init[0], kernel->sem_init[1], kernel->sem_init[2]);
 		printf("STACK_SIZE: %i\n", kernel->stack_size);
 		printf("----------------------------------------------\n");
-
 }

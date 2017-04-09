@@ -21,7 +21,8 @@ typedef struct{
 	int quantum_sleep;
 	char* algoritmo;
 	int grado_multiprog;
-	//Faltan semaforos
+	char** sem_ids;
+	char** sem_init;
 	int stack_size;
 }t_kernel;
 
