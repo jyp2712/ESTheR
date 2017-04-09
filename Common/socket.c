@@ -183,7 +183,7 @@ void socket_select(const char *port, const fdset_t *sockfds) {
 					FD_CLR(i, &all_fds.set);
 					continue;
 				}
-
+				printf("Message received: \"%s\"\n", buffer);
 				for(socket_t j = 0; j <= all_fds.max; j++) {
 					if(FD_ISSET(j, &all_fds.set) && j != sv_sock && j != i) {
 						socket_send(buffer, j);
