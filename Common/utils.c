@@ -1,7 +1,5 @@
 #include "utils.h"
 
-enum t_proceso;
-
 void quit(const char *err) {
 	if(err != NULL) {
 		fflush(stdout);

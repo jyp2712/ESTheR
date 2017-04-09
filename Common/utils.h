@@ -10,7 +10,13 @@
 #include <commons/log.h>
 #include <commons/string.h>
 
-typedef enum {Kernel, Memoria, FS, CPU, Consola} t_proceso;
+typedef enum {
+	Kernel,
+	Memoria,
+	FS,
+	CPU,
+	Consola
+} t_proceso;
 
 
 /**
