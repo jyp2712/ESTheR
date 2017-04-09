@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "socket.h"
 #include "CPU.h"
+#include <parser/metadata_program.h>
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
