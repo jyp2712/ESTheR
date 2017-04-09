@@ -1,17 +1,7 @@
 #ifndef utils_h
 #define utils_h
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <commons/log.h>
-#include <commons/string.h>
-
-typedef enum {Kernel, Memoria, FS, CPU, Consola} t_proceso;
-
+#include "globals.h"
 
 /**
  * Termina el programa normalmente si no se le pasa ningún mensaje de error.
@@ -29,7 +19,10 @@ void quit(const char *err);
  */
 void guard(bool cond, const char *err);
 
-/* Crea el archivo log con el nombre pasado por parametro*/
-t_log* crearArchivoLog(char* nombreProceso);
+/**
+ * Crea todos los directorios que no existan en la ruta pasada por parámetro.
+ * @param path Ruta al directorio a crear.
+ */
+void mkdirs(const char *path);
 
 #endif /* utils_h */

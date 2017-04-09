@@ -15,19 +15,24 @@
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-
-	t_log* LogKernel = crearArchivoLog("Kernel");
+	set_process_type(KERNEL);
 
 	t_kernel* kernel = malloc(sizeof(t_kernel));
 	leerConfiguracionKernel(kernel, argv[1]);
-	log_info(LogKernel, "Lee configuracion del proceso");
 	
-	printf("Conectandose al servidor...\n");
+	puts("Conectandose a la Memoria...");
 	int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
-	int fs_fd = socket_connect(kernel->ip_fs, kernel->puerto_fs);
-	printf("Conectado al servidor. Ya puede enviar mensajes.\n");
+	puts("Conectado a la Memoria.");
 
-	socket_select(kernel->puerto_prog, memoria_fd, fs_fd);
+	puts("Conectandose al File System...");
+	int fs_fd = socket_connect(kernel->ip_fs, kernel->puerto_fs);
+	puts("Conectando al File System.");
+
+	fdset_t fds = socket_set_create();
+	socket_set_add(memoria_fd, &fds);
+	socket_set_add(fs_fd, &fds);
+
+	socket_select(kernel->puerto_prog, &fds);
 
 	free(kernel);
 	return 0;

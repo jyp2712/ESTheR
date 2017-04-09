@@ -5,12 +5,10 @@
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-
-	t_log* LogFS = crearArchivoLog("Kernel");
+	set_process_type(FS);
 
 	t_file_system* file_system = malloc(sizeof(t_file_system));
 	leerConfiguracionFileSystem(file_system, argv[1]);
-	log_info(LogFS, "Lee configuracion del proceso");
 
 	int sockfd = socket_listen(file_system->puerto);
 

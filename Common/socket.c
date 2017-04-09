@@ -1,13 +1,13 @@
 #include "socket.h"
 
 #include <unistd.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/select.h>
 #include <poll.h>
-
-#define printop(...) if(SOCKET_PRINT_OPERATIONS) {printf(__VA_ARGS__); fflush(stdout);}
+#include "log.h"
 
 static void check(long ret) {
 	guard(ret != -1, strerror(errno));
@@ -33,8 +33,8 @@ static struct addrinfo *create_addrinfo(const char *ip, const char *port) {
 	return addr;
 }
 
-static int create_socket(struct addrinfo *addr) {
-	int sockfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+static socket_t create_socket(struct addrinfo *addr) {
+	socket_t sockfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 
 	if(sockfd != -1) {
 		int reuse = 1;
@@ -44,30 +44,33 @@ static int create_socket(struct addrinfo *addr) {
 	return sockfd;
 }
 
-static int first_valid_socket(const char *ip, const char *port) {
+static socket_t first_valid_socket(const char *ip, const char *port) {
 	struct addrinfo *cur, *addr = create_addrinfo(ip, port);
-	int sockfd = -1, ret = -1;
+	socket_t sockfd = -1;
+	int ret = -1;
 
 	for(cur = addr; cur != NULL; cur = cur->ai_next) {
-		printop("Creating socket… ");
 		sockfd = create_socket(cur);
 		if(sockfd == -1) continue;
-		printop("done. (fd = %d)\n", sockfd);
+		log_inform("Socket %d created", sockfd);
 
 		if(ip == NULL) {
-			printop("Binding to port %s… ", port);
 			ret = bind(sockfd, cur->ai_addr, cur->ai_addrlen);
 		} else {
-			printop("Connecting to %s:%s… ", ip, port);
 			ret = connect(sockfd, cur->ai_addr, cur->ai_addrlen);
 		}
 
-		if(ret != -1) {
-			printop("done.\n");
-			break;
+		if(ret == -1) {
+			socket_close(sockfd);
+			continue;
 		}
 
-		socket_close(sockfd);
+		if(ip == NULL) {
+			log_inform("Binded to port %s", port);
+		} else {
+			log_inform("Connected to %s:%s", ip, port);
+		}
+		break;
 	}
 
 	freeaddrinfo(addr);
@@ -75,98 +78,114 @@ static int first_valid_socket(const char *ip, const char *port) {
 	check(ret);
 
 	if(ip == NULL) {
-		printop("Getting ready to listen… ");
 		check(listen(sockfd, SOCKET_BACKLOG));
-		printop("done.\n");
+		log_inform("Listening on port %s", port);
 	}
 
 	return sockfd;
 }
 
-static int accept_connection(int sv_sock) {
+static socket_t accept_connection(socket_t sv_sock) {
 	struct sockaddr rem_addr;
 	socklen_t addr_size = sizeof rem_addr;
 
-	printop("Preparing to accept connections… ");
-	int cli_sock = accept(sv_sock, &rem_addr, &addr_size);
+	socket_t cli_sock = accept(sv_sock, &rem_addr, &addr_size);
 	check(cli_sock);
 
-	struct in_addr addr = ((struct sockaddr_in*) &rem_addr)->sin_addr;
-	printop("done. (%s connected on socket %d)\n", inet_ntoa(addr), cli_sock);
+	struct sockaddr_in *addr_in = (struct sockaddr_in*) &rem_addr;
+	char remote_ip[INET_ADDRSTRLEN];
+
+	inet_ntop(AF_INET, &addr_in->sin_addr, remote_ip, INET_ADDRSTRLEN);
+	log_inform("Client %s connected on socket %d", remote_ip, cli_sock);
 
 	return cli_sock;
 }
 
-int socket_listen(const char *port) {
-	int sv_sock = first_valid_socket(NULL, port);
-	int cli_sock = accept_connection(sv_sock);
+socket_t socket_listen(const char *port) {
+	socket_t sv_sock = first_valid_socket(NULL, port);
+	socket_t cli_sock = accept_connection(sv_sock);
 
 	socket_close(sv_sock);
 	return cli_sock;
 }
 
-int socket_connect(const char *ip, const char *port) {
+socket_t socket_connect(const char *ip, const char *port) {
 	return first_valid_socket(ip, port);
 }
 
-ssize_t socket_send(const char *message, int sockfd) {
-	printop("Sending message… ");
-	ssize_t bytes_sent = write(sockfd, message, strlen(message) + 1);
-	check(bytes_sent);
-	printop("done. (%zu bytes sent)\n", bytes_sent);
+static size_t sendall(socket_t sockfd, const char *buf, size_t len) {
+	size_t bytes_sent = 0;
+
+	while(bytes_sent < len) {
+		ssize_t n = write(sockfd, buf + bytes_sent, len - bytes_sent);
+		check(n);
+		bytes_sent += n;
+	}
 
 	return bytes_sent;
 }
 
-ssize_t socket_receive(char *message, int sockfd) {
-	printop("Receiving message… ");
+size_t socket_send(const char *message, socket_t sockfd) {
+	size_t bytes_sent = sendall(sockfd, message, strlen(message) + 1);
+	log_inform("Sent %ld bytes: \"%s\"", bytes_sent, message);
+
+	return bytes_sent;
+}
+
+size_t socket_receive(char *message, socket_t sockfd) {
 	ssize_t bytes_received = read(sockfd, message, SOCKET_BUFFER_CAPACITY);
 	check(bytes_received);
 
 	if(bytes_received == 0) {
-		printop("connection dropped on socket %d.\n", sockfd);
+		log_inform("Connection dropped on socket %d", sockfd);
 	} else {
-		printop("done. (%zu bytes received)\n", bytes_received);
+		log_inform("Received %ld bytes: \"%s\"", bytes_received, message);
 	}
 
 	return bytes_received;
 }
 
-void socket_select(const char *port, int portServer1, int portServer2) {
+fdset_t socket_set_create(void) {
+	fdset_t fds;
+	fds.max = -1;
+	FD_ZERO(&fds.set);
+	return fds;
+}
+
+void socket_set_add(socket_t fd, fdset_t *fds) {
+	FD_SET(fd, &fds->set);
+	if(fd > fds->max) {
+		fds->max = fd;
+	}
+}
+
+void socket_select(const char *port, const fdset_t *sockfds) {
 	char buffer[SOCKET_BUFFER_CAPACITY];
 
-	fd_set all_fds, read_fds;
-	FD_ZERO(&all_fds);
-	FD_ZERO(&read_fds);
+	fdset_t all_fds = sockfds != NULL ? *sockfds : socket_set_create();
+	fdset_t read_fds = socket_set_create();
 
-	int sv_sock = first_valid_socket(NULL, port);
-
-	FD_SET(sv_sock, &all_fds);
-	int fdmax = sv_sock;
+	socket_t sv_sock = first_valid_socket(NULL, port);
+	socket_set_add(sv_sock, &all_fds);
 
 	while(true) {
 		read_fds = all_fds;
-		check(select(fdmax + 1, &read_fds, NULL, NULL, NULL));
+		check(select(read_fds.max + 1, &read_fds.set, NULL, NULL, NULL));
 
-		for(int i = 0; i <= fdmax; i++) {
-			if(!FD_ISSET(i, &read_fds)) continue;
+		for(socket_t i = 0; i <= all_fds.max; i++) {
+			if(!FD_ISSET(i, &read_fds.set)) continue;
 			if(i == sv_sock) {
-				int cli_sock = accept_connection(sv_sock);
-
-				FD_SET(cli_sock, &all_fds);
-				if(cli_sock > fdmax) {
-					fdmax = cli_sock;
-				}
+				socket_t cli_sock = accept_connection(sv_sock);
+				socket_set_add(cli_sock, &all_fds);
 			} else {
 				if(socket_receive(buffer, i) == 0) {
 					socket_close(i);
-					FD_CLR(i, &all_fds);
+					FD_CLR(i, &all_fds.set);
 					continue;
 				}
-				socket_send (buffer, portServer1);
-				socket_send (buffer, portServer2);
-				for(int j = 0; j <= fdmax; j++) {
-					if(FD_ISSET(j, &all_fds) && j != sv_sock && j != i) {
+
+				for(socket_t j = 0; j <= all_fds.max; j++) {
+					if(FD_ISSET(j, &all_fds.set) && j != sv_sock && j != i) {
 						socket_send(buffer, j);
 					}
 				}
@@ -175,49 +194,7 @@ void socket_select(const char *port, int portServer1, int portServer2) {
 	}
 }
 
-
-void socket_poll(const char *port) {
-	char buffer[SOCKET_BUFFER_CAPACITY];
-
-	struct pollfd ufds[SOCKET_MAX_POLLED];
-	int nfds = 1;
-
-	int sv_sock = first_valid_socket(NULL, port);
-
-	ufds[0].fd = sv_sock;
-	ufds[0].events = POLLIN;
-
-	while(true) {
-		check(poll(ufds, nfds, -1));
-
-		for(int i = 0; i < nfds; i++) {
-			if(!(ufds[i].revents & POLLIN)) continue;
-			if(i == 0) {
-				ufds[nfds].fd = accept_connection(sv_sock);
-				ufds[nfds].events = POLLIN;
-				nfds++;
-			} else {
-				int cli_sock = ufds[i].fd;
-
-				if(socket_receive(buffer, cli_sock) == 0) {
-					socket_close(cli_sock);
-					continue;
-				}
-
-				for(int j = 0; j < nfds; j++) {
-					int cur_sock = ufds[j].fd;
-					if((ufds[i].revents & POLLIN)
-							&& cur_sock != sv_sock && cur_sock != cli_sock) {
-						socket_send(buffer, cur_sock);
-					}
-				}
-			}
-		}
-	}
-}
-
-void socket_close(int sockfd) {
-	printop("Closing socket %d… ", sockfd);
+void socket_close(socket_t sockfd) {
 	check(close(sockfd));
-	printop("done.\n");
+	log_inform("Socket %d closed", sockfd);
 }

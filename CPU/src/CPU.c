@@ -5,16 +5,14 @@
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-
-	t_log* LogCPU = crearArchivoLog("Kernel");
+	set_process_type(CPU);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
-	log_info(LogCPU, "Lee configuracion del proceso");
 
-	printf("Conectandose al servidor...\n");
+	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
-	printf("Conectado al servidor. Ya puede enviar mensajes. Escriba 'exit' para salir\n");
+	puts("Conectado.");
 
 //------------Envio de mensajes al servidor------------
 	char message[SOCKET_BUFFER_CAPACITY];

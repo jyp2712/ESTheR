@@ -1,11 +1,10 @@
 #include "utils.h"
-
-enum t_proceso;
+#include "globals.h"
+#include "log.h"
 
 void quit(const char *err) {
 	if(err != NULL) {
-		fflush(stdout);
-		fprintf(stderr, "Error: %s\n", err);
+		log_report(err);
 		exit(EXIT_FAILURE);
 	}
 	exit(EXIT_SUCCESS);
@@ -13,25 +12,12 @@ void quit(const char *err) {
 
 void guard(bool cond, const char *err) {
 	if(cond) return;
-	quit(err != NULL ? err : "guard error");
+	quit(err != NULL ? err : "Guard error");
 }
 
-
-t_log* crearArchivoLog(char* nombreProceso) {
-
-	char* path = string_new();
-	string_append(&path, "log");
-	string_append(&path, nombreProceso);
-
-	remove(path);
-
-	t_log* logs = log_create(path, nombreProceso, 0, LOG_LEVEL_TRACE);
-	if (logs == NULL) {
-		puts("No se pudo generar el archivo de logueo.\n");
-		return NULL;
-	}
-
-	log_info(logs, "ARCHIVO DE LOGUEO INICIALIZADO");
-
-	return logs;
+void mkdirs(const char *path) {
+	char *cmd = string_duplicate("mkdir -p ");
+	string_append(&cmd, (char*) path);
+	system(cmd);
+	free(cmd);
 }

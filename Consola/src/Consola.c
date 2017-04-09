@@ -1,20 +1,19 @@
 #include <commons/config.h>
 #include "utils.h"
 #include "socket.h"
+#include "log.h"
 #include "Consola.h"
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-
-	t_log* LogConsola = crearArchivoLog("Kernel");
+	set_process_type(CONSOLE);
 
 	t_consola *consola = malloc(sizeof(t_consola));
 	leerConfiguracionConsola(consola, argv[1]);
-	log_info(LogConsola, "Lee configuracion del proceso");
 
-	printf("Conectandose al servidor...\n");
+	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(consola->ip_kernel, consola->puerto_kernel);
-	printf("Conectado al servidor. Ya puede enviar mensajes. Escriba 'exit' para salir\n");
+	puts("Conectado. Ya puede enviar mensajes. Escriba 'exit' para salir");
 
 //------------Envio de mensajes al servidor------------
 	char message[SOCKET_BUFFER_CAPACITY];
@@ -32,7 +31,6 @@ int main(int argc, char **argv) {
 }
 
 void leerConfiguracionConsola(t_consola *consola, char *path) {
-
 	t_config* config = config_create(path);
 
 	consola->ip_kernel = config_get_string_value(config, "IP_KERNEL");
