@@ -1,7 +1,6 @@
 #include "utils.h"
 
-
-typedef enum {Kernel, Memoria, FS, CPU, Consola} t_proceso;
+enum t_proceso;
 
 void quit(const char *err) {
 	if(err != NULL) {
