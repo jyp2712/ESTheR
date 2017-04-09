@@ -1,5 +1,6 @@
 #include "utils.h"
 
+
 typedef enum {Kernel, Memoria, FS, CPU, Consola} t_proceso;
 
 void quit(const char *err) {
@@ -14,4 +15,24 @@ void quit(const char *err) {
 void guard(bool cond, const char *err) {
 	if(cond) return;
 	quit(err != NULL ? err : "guard error");
+}
+
+
+t_log* crearArchivoLog(char* nombreProceso) {
+
+	char* path = string_new();
+	string_append(&path, "log");
+	string_append(&path, nombreProceso);
+
+	remove(path);
+
+	t_log* logs = log_create(path, nombreProceso, 0, LOG_LEVEL_TRACE);
+	if (logs == NULL) {
+		puts("No se pudo generar el archivo de logueo.\n");
+		return NULL;
+	}
+
+	log_info(logs, "ARCHIVO DE LOGUEO INICIALIZADO");
+
+	return logs;
 }

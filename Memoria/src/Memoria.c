@@ -6,8 +6,11 @@
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
+	t_log* LogMemoria = crearArchivoLog("Memoria");
+
 	t_memoria* memoria = malloc(sizeof(t_memoria));
 	leerConfiguracionMemoria(memoria, argv[1]);
+	log_info(LogMemoria, "Lee configuracion del proceso");
 
 	int sockfd = socket_listen(memoria->puerto);
 

@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <commons/log.h>
+#include <commons/string.h>
 
 /**
  * Termina el programa normalmente si no se le pasa ningún mensaje de error.
@@ -23,5 +25,8 @@ void quit(const char *err);
  * @param err Mensaje de error.
  */
 void guard(bool cond, const char *err);
+
+/* Crea el archivo log con el nombre pasado por parametro*/
+t_log* crearArchivoLog(char* nombreProceso);
 
 #endif /* utils_h */

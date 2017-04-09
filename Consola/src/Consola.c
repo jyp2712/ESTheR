@@ -6,8 +6,11 @@
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
+	t_log* LogConsola = crearArchivoLog("Kernel");
+
 	t_consola *consola = malloc(sizeof(t_consola));
 	leerConfiguracionConsola(consola, argv[1]);
+	log_info(LogConsola, "Lee configuracion del proceso");
 
 	printf("Conectandose al servidor...\n");
 	int kernel_fd = socket_connect(consola->ip_kernel, consola->puerto_kernel);

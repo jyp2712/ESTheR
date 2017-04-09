@@ -12,8 +12,11 @@
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
-	t_kernel* kernel = malloc(sizeof(t_kernel)); // Reservo memoria para la estructura del kernel
-	leerConfiguracionKernel(kernel, argv[1]); // Leo configuracion metadata y la guardo en la estructura kernel
+	t_log* LogKernel = crearArchivoLog("Kernel");
+
+	t_kernel* kernel = malloc(sizeof(t_kernel));
+	leerConfiguracionKernel(kernel, argv[1]);
+	log_info(LogKernel, "Lee configuracion del proceso");
 	
 	printf("Conectandose al servidor...\n");
 	int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
