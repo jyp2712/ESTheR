@@ -39,5 +39,9 @@ AnSISOP_funciones funcionesAnSISOP = {
 		.AnSISOP_finalizar					= finalizar,
 };
 
+// Estructuras funciones Kernel
+AnSISOP_kernel funcionesKernel = {
+};
+
 
 #endif /* CPU_H_ */
