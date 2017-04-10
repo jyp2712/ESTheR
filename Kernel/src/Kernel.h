@@ -27,6 +27,40 @@ typedef struct{
 	int stack_size;
 }t_kernel;
 
+typedef struct{
+	int page;
+	int offset;
+	int size;
+}t_indexCode;
+
+typedef struct{
+	int program;
+	int PC;
+}t_programTag;
+
+typedef struct{
+	char* id;
+	t_indexCode mempos;
+}t_var;
+
+typedef struct{
+	int pos;
+	t_var args;
+	t_var vars;
+	int retPos;
+	t_indexCode retVar;
+}t_stack;
+
+typedef struct {
+	int idProcess;
+	int PC;
+	int pagesCode;
+	t_indexCode* indexCode;
+	t_programTag indexTag;
+	t_stack indexStack;
+	int exitCode;
+} t_PCB;
+
 void leerConfiguracionKernel(t_kernel*, char* path);
 
 #endif /* KERNEL_H_ */
