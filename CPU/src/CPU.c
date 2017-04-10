@@ -2,12 +2,10 @@
 #include "utils.h"
 #include "socket.h"
 #include "CPU.h"
-#include <parser/metadata_program.h>
 
 int main(int argc, char **argv) {
-	set_process_type(CPU);
-
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
+	set_process_type(CPU);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
@@ -40,3 +38,60 @@ void leerConfiguracionCPU(t_cpu* cpu, char* path) {
 	printf("PUERTO KERNEL: %s\n", cpu->puerto_kernel);
 	printf("----------------------------------------------\n");
 }
+
+// Primitivas AnSISOP
+
+t_puntero definirVariable(t_nombre_variable identificador_variable){
+	t_puntero posicion;
+
+	return posicion;
+}
+
+t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
+	t_puntero posicion;
+
+	return posicion;
+}
+
+t_valor_variable dereferenciar(t_puntero direccion_variable){
+	t_valor_variable valorVariable;
+
+	return valorVariable;
+}
+
+void asignar(t_puntero direccion_variable, t_valor_variable valor){
+
+}
+
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
+	t_valor_variable valorVariable;
+
+	return valorVariable;
+}
+
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
+	t_valor_variable valorVariable;
+
+	return valorVariable;
+}
+
+void irAlLabel(t_nombre_etiqueta t_nombre_etiqueta){
+
+}
+
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
+
+}
+
+void llamarSinRetorno(t_nombre_etiqueta etiqueta){
+
+}
+
+void retornar(t_valor_variable retorno){
+
+}
+
+void finalizar(void){
+
+}
+
