@@ -18,6 +18,12 @@ typedef struct{
 	int retardo_memoria;
 }t_memoria;
 
-void leerConfiguracionMemoria(t_memoria* memoria, char* path);
+void leerConfiguracion(t_memoria* config, char* path);
+
+void inicializar(t_memoria* config);
+
+void crearServidor(t_memoria* config);
+
+void interpreteDeComandos(t_memoria* config);
 
 #endif /* MEMORIA_H_ */
