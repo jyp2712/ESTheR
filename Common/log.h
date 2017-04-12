@@ -4,6 +4,8 @@
 #define LOG_ENABLED true
 #define LOG_STDOUT true
 
+#include "utils.h"
+
 /**
  * Informa un mensaje en el archivo de log del proceso en ejecución.
  * @param format Cadena con formato indicando el mensaje de log.

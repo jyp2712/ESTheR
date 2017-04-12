@@ -4,9 +4,6 @@
 #include "utils.h"
 
 #define SOCKET_BUFFER_CAPACITY 1024
-#define SOCKET_BACKLOG 5
-#define SOCKET_PRINT_OPERATIONS true
-#define SOCKET_MAX_POLLED 10
 
 typedef int socket_t;
 
@@ -16,12 +13,30 @@ typedef struct {
 } fdset_t;
 
 /**
+ * Si se indica la IP, crea un socket y lo conecta al servidor de la IP y
+ * puerto especificados. Si no se indica la IP, crea un socket y lo prepara
+ * para escuchar conexiones en el puerto especificado.
+ * @param ip Dirección IP del servidor.
+ * @param port Puerto.
+ * @return Descriptor del socket.
+ */
+socket_t socket_init(const char *ip, const char *port);
+
+/**
  * Crea un socket de servidor para conectarse con un cliente a través de un
  * puerto determinado.
  * @param port Puerto de escucha.
  * @return Descriptor del socket del cliente.
  */
 socket_t socket_listen(const char *port);
+
+/*
+ * Función bloqueante que espera por conexiones en un socket servidor y las
+ * acepta devolviendo el socket cliente.
+ * @param sv_sock Descriptor del socket del servidor.
+ * @return Descriptor del socket del cliente.
+ */
+socket_t socket_accept(socket_t sv_sock);
 
 /**
  * Crea un socket de cliente para conectarse con un servidor en una dirección
@@ -33,20 +48,38 @@ socket_t socket_listen(const char *port);
 socket_t socket_connect(const char *ip, const char *port);
 
 /**
- * Envía un mensaje por una conexión abierta en un determinado socket.
+ * Envía una cadena de texto por una conexión abierta en un determinado socket.
  * @param message Mensaje a enviar.
  * @param sockfd Descriptor del socket.
  * @return Número de bytes enviados.
  */
-size_t socket_send(const char *message, socket_t sockfd);
+size_t socket_send_string(const char *message, socket_t sockfd);
 
 /**
- * Recibe un mensaje por una conexión abierta en un determinado socket.
+ * Envía datos binarios por una conexión abierta en un determinado socket.
+ * @param message Mensaje a enviar.
+ * @param size Tamaño de los datos.
+ * @param sockfd Descriptor del socket.
+ * @return Número de bytes enviados.
+ */
+size_t socket_send_bytes(const unsigned char *message, size_t size, socket_t sockfd);
+
+/**
+ * Recibe una cadena de texto por una conexión abierta en un determinado socket.
  * @param message Mensaje a recibir.
  * @param sockfd Descriptor del socket.
  * @return Número de bytes recibidos.
  */
-size_t socket_receive(char *message, socket_t sockfd);
+size_t socket_receive_string(char *message, socket_t sockfd);
+
+/**
+ * Recibe datos binarios por una conexión abierta en un determinado socket.
+ * @param message Mensaje a recibir.
+ * @param size Tamaño de los datos.
+ * @param sockfd Descriptor del socket.
+ * @return Número de bytes recibidos.
+ */
+size_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd);
 
 /**
  * Crea un conjunto de sockets para ser usado por socket_select().

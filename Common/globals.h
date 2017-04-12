@@ -13,16 +13,22 @@ typedef enum {KERNEL, MEMORY, FS, CPU, CONSOLE} process_t;
 
 /**
  * Establece el proceso en ejecución.
- * @return Nombre del proceso en ejecución.
+ * @param ID del proceso en ejecución.
  */
-void set_process_type(process_t type);
-process_t get_process_type(void);
+void set_current_process(process_t spid);
 
 /**
- * Devuelve una cadena con el nombre del proceso en ejecución.
- * @return Nombre del proceso en ejecución.
+ * Devuelve el proceso en ejecución.
+ * @return ID del proceso en ejecución.
  */
-const char *get_process_name(void);
+process_t get_current_process(void);
+
+/**
+ * Devuelve una cadena con el nombre de un proceso determinado.
+ * @param spid ID del proceso.
+ * @return Nombre del proceso.
+ */
+const char *get_process_name(process_t spid);
 
 /**
  * Devuelve la ruta al directorio de recursos (donde se guardan

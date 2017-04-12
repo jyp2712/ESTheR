@@ -1,6 +1,5 @@
 #include "log.h"
 
-#include "utils.h"
 #include <commons/string.h>
 #include <commons/log.h>
 
@@ -14,7 +13,7 @@ static const char *log_path(void) {
 		string_append(&path, (char*) get_resource_path());
 		string_append(&path, "logs/");
 		mkdirs(path);
-		string_append(&path, (char*) get_process_name());
+		string_append(&path, (char*) get_process_name(get_current_process()));
 		string_append(&path, ".txt");
 	}
 
@@ -25,7 +24,8 @@ static t_log *get_logger(void) {
 	static t_log *logger = NULL;
 
 	if(logger == NULL) {
-		logger = log_create((char*) log_path(), (char*) get_process_name(), LOG_STDOUT, LOG_LEVEL_TRACE);
+		logger = log_create((char*) log_path(),
+				(char*) get_process_name(get_current_process()), LOG_STDOUT, LOG_LEVEL_TRACE);
 	}
 
 	return logger;

@@ -1,12 +1,13 @@
+#include "Memoria.h"
 #include <pthread.h>
 #include <semaphore.h>
 #include <commons/config.h>
 #include "utils.h"
 #include "socket.h"
-#include "Memoria.h"
+#include "protocol.h"
 
 int main(int argc, char **argv) {
-	set_process_type(MEMORY);
+	set_current_process(MEMORY);
 
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
@@ -54,14 +55,19 @@ void inicializar(t_memoria* config){
 }
 
 void crearServidor(t_memoria* config){
-	int sockfd = socket_listen(config->puerto);
+	socket_t kernel_fd = socket_listen(config->puerto);
+
+	header_t header = protocol_header_receive(kernel_fd);
+	guard(header.opcode == OP_HANDSHAKE && header.syspid == KERNEL, "Unexpected handshake");
+	puts("Recibido handshake del Kernel");
 
 	char message[SOCKET_BUFFER_CAPACITY];
 
-	while(socket_receive(message, sockfd) > 0) {
-		printf("Message received: \"%s\"\n", message);
+	while(socket_receive_string(message, kernel_fd) > 0) {
+		printf("Recibido mensaje: \"%s\"\n", message);
 	}
-	socket_close(sockfd);
+
+	socket_close(kernel_fd);
 }
 
 void interpreteDeComandos(t_memoria* config){

@@ -8,10 +8,10 @@
 #include <sys/select.h>
 #include <poll.h>
 #include "log.h"
+#include "serial.h"
+#include "protocol.h"
 
-static void check(long ret) {
-	guard(ret != -1, strerror(errno));
-}
+#define SOCKET_BACKLOG 5
 
 static struct addrinfo *create_addrinfo(const char *ip, const char *port) {
 	if(port != NULL) {
@@ -44,7 +44,7 @@ static socket_t create_socket(struct addrinfo *addr) {
 	return sockfd;
 }
 
-static socket_t first_valid_socket(const char *ip, const char *port) {
+socket_t socket_init(const char *ip, const char *port) {
 	struct addrinfo *cur, *addr = create_addrinfo(ip, port);
 	socket_t sockfd = -1;
 	int ret = -1;
@@ -74,23 +74,23 @@ static socket_t first_valid_socket(const char *ip, const char *port) {
 	}
 
 	freeaddrinfo(addr);
-	check(sockfd);
-	check(ret);
+	fdcheck(sockfd);
+	fdcheck(ret);
 
 	if(ip == NULL) {
-		check(listen(sockfd, SOCKET_BACKLOG));
+		fdcheck(listen(sockfd, SOCKET_BACKLOG));
 		log_inform("Listening on port %s", port);
 	}
 
 	return sockfd;
 }
 
-static socket_t accept_connection(socket_t sv_sock) {
+socket_t socket_accept(socket_t sv_sock) {
 	struct sockaddr rem_addr;
 	socklen_t addr_size = sizeof rem_addr;
 
 	socket_t cli_sock = accept(sv_sock, &rem_addr, &addr_size);
-	check(cli_sock);
+	fdcheck(cli_sock);
 
 	struct sockaddr_in *addr_in = (struct sockaddr_in*) &rem_addr;
 	char remote_ip[INET_ADDRSTRLEN];
@@ -102,44 +102,77 @@ static socket_t accept_connection(socket_t sv_sock) {
 }
 
 socket_t socket_listen(const char *port) {
-	socket_t sv_sock = first_valid_socket(NULL, port);
-	socket_t cli_sock = accept_connection(sv_sock);
+	socket_t sv_sock = socket_init(NULL, port);
+	socket_t cli_sock = socket_accept(sv_sock);
 
 	socket_close(sv_sock);
 	return cli_sock;
 }
 
 socket_t socket_connect(const char *ip, const char *port) {
-	return first_valid_socket(ip, port);
+	return socket_init(ip, port);
 }
 
-static size_t sendall(socket_t sockfd, const char *buf, size_t len) {
+static size_t sendall(socket_t sockfd, const unsigned char *buf, size_t len) {
 	size_t bytes_sent = 0;
 
 	while(bytes_sent < len) {
-		ssize_t n = write(sockfd, buf + bytes_sent, len - bytes_sent);
-		check(n);
+		ssize_t n = send(sockfd, buf + bytes_sent, len - bytes_sent, 0);
+		fdcheck(n);
 		bytes_sent += n;
 	}
 
 	return bytes_sent;
 }
 
-size_t socket_send(const char *message, socket_t sockfd) {
-	size_t bytes_sent = sendall(sockfd, message, strlen(message) + 1);
-	log_inform("Sent %ld bytes: \"%s\"", bytes_sent, message);
+size_t socket_send_string(const char *message, socket_t sockfd) {
+	size_t bytes_sent = sendall(sockfd, (const unsigned char *) message, strlen(message) + 1);
+	log_inform("Sent string: \"%s\"", message);
 
 	return bytes_sent;
 }
 
-size_t socket_receive(char *message, socket_t sockfd) {
-	ssize_t bytes_received = read(sockfd, message, SOCKET_BUFFER_CAPACITY);
-	check(bytes_received);
+size_t socket_send_bytes(const unsigned char *message, size_t size, socket_t sockfd) {
+	size_t bytes_sent = sendall(sockfd, message, size);
+	if(bytes_sent > 0) {
+		log_inform("Sent %ld bytes", bytes_sent);
+	}
 
-	if(bytes_received == 0) {
-		log_inform("Connection dropped on socket %d", sockfd);
-	} else {
-		log_inform("Received %ld bytes: \"%s\"", bytes_received, message);
+	return bytes_sent;
+}
+
+static size_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
+	size_t bytes_received = 0;
+
+	while(bytes_received < len) {
+		ssize_t n = recv(sockfd, buf + bytes_received, len - bytes_received, 0);
+		fdcheck(n);
+		if(n == 0) {
+			log_report("Connection dropped on socket %d", sockfd);
+			return 0;
+		}
+		bytes_received += n;
+		if(len == SOCKET_BUFFER_CAPACITY && buf[bytes_received - 1] == '\0') {
+			break;
+		}
+	}
+
+	return bytes_received;
+}
+
+size_t socket_receive_string(char *message, socket_t sockfd) {
+	size_t bytes_received = recvall(sockfd, (unsigned char *) message, SOCKET_BUFFER_CAPACITY);
+	if(bytes_received > 0) {
+		log_inform("Received string: \"%s\"", message);
+	}
+
+	return bytes_received;
+}
+
+size_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd) {
+	size_t bytes_received = recvall(sockfd, message, size);
+	if(bytes_received > 0) {
+		log_inform("Received %ld bytes", bytes_received);
 	}
 
 	return bytes_received;
@@ -159,42 +192,7 @@ void socket_set_add(socket_t fd, fdset_t *fds) {
 	}
 }
 
-void socket_select(const char *port, const fdset_t *sockfds) {
-	char buffer[SOCKET_BUFFER_CAPACITY];
-
-	fdset_t all_fds = sockfds != NULL ? *sockfds : socket_set_create();
-	fdset_t read_fds = socket_set_create();
-
-	socket_t sv_sock = first_valid_socket(NULL, port);
-	socket_set_add(sv_sock, &all_fds);
-
-	while(true) {
-		read_fds = all_fds;
-		check(select(read_fds.max + 1, &read_fds.set, NULL, NULL, NULL));
-
-		for(socket_t i = 0; i <= all_fds.max; i++) {
-			if(!FD_ISSET(i, &read_fds.set)) continue;
-			if(i == sv_sock) {
-				socket_t cli_sock = accept_connection(sv_sock);
-				socket_set_add(cli_sock, &all_fds);
-			} else {
-				if(socket_receive(buffer, i) == 0) {
-					socket_close(i);
-					FD_CLR(i, &all_fds.set);
-					continue;
-				}
-				printf("Message received: \"%s\"\n", buffer);
-				for(socket_t j = 0; j <= all_fds.max; j++) {
-					if(FD_ISSET(j, &all_fds.set) && j != sv_sock && j != i) {
-						socket_send(buffer, j);
-					}
-				}
-			}
-		}
-	}
-}
-
 void socket_close(socket_t sockfd) {
-	check(close(sockfd));
+	fdcheck(close(sockfd));
 	log_inform("Socket %d closed", sockfd);
 }

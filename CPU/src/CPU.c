@@ -1,24 +1,26 @@
+#include "CPU.h"
 #include <commons/config.h>
 #include "utils.h"
 #include "socket.h"
-#include "CPU.h"
+#include "protocol.h"
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-	set_process_type(CPU);
+	set_current_process(CPU);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
 
 	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
+	protocol_send_handshake(kernel_fd);
 	puts("Conectado.");
 
 //------------Envio de mensajes al servidor------------
 	char message[SOCKET_BUFFER_CAPACITY];
 
-	while(socket_receive(message, kernel_fd) > 0) {
-		printf ("Message received: \"%s\"\n", message);
+	while(socket_receive_string(message, kernel_fd) > 0) {
+		printf("Recibido mensaje: \"%s\"\n", message);
 	}
 
 	free(cpu);

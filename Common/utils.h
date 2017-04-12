@@ -13,11 +13,18 @@ void quit(const char *err);
 
 /**
  * Verifica el valor booleano de una condición. En caso de ser falso, imprime
- * un mensaje de error por stderr y termina la ejecución del programa.
+ * un mensaje de error por el log y termina la ejecución del programa.
  * @param cond Condidición a verificar.
  * @param err Mensaje de error.
  */
 void guard(bool cond, const char *err);
+
+/**
+ * Verifica el valor del descriptor de archivo. Si es -1, imprime un mensaje
+ * de error por el log y termina la ejecución del programa.
+ * @param fd Descriptor de archivo o número a verificar.
+ */
+void fdcheck(long fd);
 
 /**
  * Crea todos los directorios que no existan en la ruta pasada por parámetro.

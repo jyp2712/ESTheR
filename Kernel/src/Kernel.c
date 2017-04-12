@@ -1,8 +1,10 @@
+#include "Kernel.h"
 #include <commons/config.h>
 #include <commons/string.h>
 #include "utils.h"
 #include "socket.h"
-#include "Kernel.h"
+#include "protocol.h"
+#include "serial.h"
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -12,27 +14,69 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
+	char buffer[SOCKET_BUFFER_CAPACITY];
+
+	fdset_t read_fds, all_fds = socket_set_create();
+	socket_set_add(mem_fd, &all_fds);
+	socket_set_add(fs_fd, &all_fds);
+
+	socket_t sv_sock = socket_init(NULL, port);
+	socket_set_add(sv_sock, &all_fds);
+
+	while(true) {
+		read_fds = all_fds;
+		puts("Selecting");
+		fdcheck(select(read_fds.max + 1, &read_fds.set, NULL, NULL, NULL));
+		puts("Selected");
+
+		for(socket_t i = 0; i <= all_fds.max; i++) {
+			if(!FD_ISSET(i, &read_fds.set)) continue;
+			if(i == sv_sock) {
+				socket_t cli_sock = socket_accept(sv_sock);
+				header_t header = protocol_header_receive(cli_sock);
+				if(header.opcode == OP_HANDSHAKE && (header.syspid == CONSOLE || header.syspid == CPU)) {
+					socket_set_add(cli_sock, &all_fds);
+					printf("Recibido handshake de%s\n", header.syspid == CPU ? "l CPU" : " la Consola");
+				} else {
+					socket_close(cli_sock);
+				}
+			} else {
+				if(socket_receive_string(buffer, i) == 0 ) {
+					socket_close(i);
+					FD_CLR(i, &all_fds.set);
+					continue;
+				}
+
+				printf("Recibido mensaje: \"%s\"\n", buffer);
+
+				for(socket_t j = 0; j <= all_fds.max; j++) {
+					if(!FD_ISSET(j, &all_fds.set) || j == sv_sock || j == i) continue;
+					socket_send_string(buffer, j);
+				}
+			}
+		}
+	}
+}
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-	set_process_type(KERNEL);
+	set_current_process(KERNEL);
 
 	t_kernel* kernel = malloc(sizeof(t_kernel));
 	leerConfiguracionKernel(kernel, argv[1]);
 	
-	puts("Conectandose a la Memoria...");
+	puts("Conectándose a la Memoria...");
 	int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
+	protocol_send_handshake(memoria_fd);
 	puts("Conectado a la Memoria.");
 
-	puts("Conectandose al File System...");
+	puts("Conectándose al File System...");
 	int fs_fd = socket_connect(kernel->ip_fs, kernel->puerto_fs);
-	puts("Conectando al File System.");
+	protocol_send_handshake(fs_fd);
+	puts("Conectado al File System.");
 
-	fdset_t fds = socket_set_create();
-	socket_set_add(memoria_fd, &fds);
-	socket_set_add(fs_fd, &fds);
-
-	socket_select(kernel->puerto_prog, &fds);
+	init_server(kernel->puerto_prog, memoria_fd, fs_fd);
 
 	free(kernel);
 	return 0;
