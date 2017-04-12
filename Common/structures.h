@@ -6,7 +6,6 @@
 #include <parser/metadata_program.h>
 
 typedef struct{
-	int page;
 	int offset;
 	int size;
 }t_indexCode;
@@ -19,8 +18,14 @@ typedef struct{
 // Variable AnSISOP
 typedef struct{
 	char* id;
+	int page;
 	t_indexCode mempos;
 }t_var; // o argumento, funcionan igual
+
+typedef struct{
+	int page;
+	t_indexCode mempos;
+}t_varRet;
 
 // Elemento del Índice de Stack
 typedef struct{
@@ -28,7 +33,7 @@ typedef struct{
 	t_list* args;
 	t_list* vars;
 	int retPos;
-	t_indexCode retVar;
+	t_varRet retVar;
 }t_stack;
 
 // PCB de un proceso
@@ -38,7 +43,7 @@ typedef struct {
 	int status;
 	int priority;
 	int pagesCode;
-	t_intructions* indexCode;
+	t_indexCode* indexCode;
 	t_programTag indexTag;
 	t_list* indexStack;
 	int exitCode;
