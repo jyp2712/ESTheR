@@ -5,6 +5,7 @@
 #include <parser/sintax.h>
 
 typedef struct{
+	int page;
 	int offset;
 	int size;
 }t_indexCode;
@@ -16,21 +17,15 @@ typedef struct{
 
 typedef struct{
 	char* id;
-	int page;
 	t_indexCode mempos;
 }t_var;
-
-typedef struct{
-	int page;
-	t_indexCode mempos;
-}t_varRet;
 
 typedef struct{
 	int pos;
 	t_var args;
 	t_var vars;
 	int retPos;
-	t_varRet retVar;
+	t_indexCode retVar;
 }t_stack;
 
 typedef struct {
