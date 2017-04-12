@@ -18,14 +18,16 @@ typedef struct{
 
 // Variable AnSISOP
 typedef struct{
-	char* id;
+	char id;
 	t_indexCode mempos;
 }t_var; // o argumento, funcionan igual
 
 // Elemento del Índice de Stack
 typedef struct{
 	int pos;
+	int cantidad_args;
 	t_list* args;
+	int cantidad_vars;
 	t_list* vars;
 	int retPos;
 	t_indexCode retVar;
@@ -41,6 +43,8 @@ typedef struct {
 	t_intructions* indexCode;
 	t_programTag indexTag;
 	t_list* indexStack;
+	int stackOffsetPointer;
+	int stackPagePointer;
 	int exitCode;
 } t_pcb;
 
