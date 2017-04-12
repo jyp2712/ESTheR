@@ -1,24 +1,29 @@
+#include "File_System.h"
 #include <commons/config.h>
 #include "utils.h"
 #include "socket.h"
-#include "File_System.h"
+#include "protocol.h"
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-	set_process_type(FS);
+	set_current_process(FS);
 
 	t_file_system* file_system = malloc(sizeof(t_file_system));
 	leerConfiguracionFileSystem(file_system, argv[1]);
 
-	int sockfd = socket_listen(file_system->puerto);
+	socket_t kernel_fd = socket_listen(file_system->puerto);
+
+	header_t header = protocol_header_receive(kernel_fd);
+	guard(header.opcode == OP_HANDSHAKE && header.syspid == KERNEL, "Unexpected handshake");
+	puts("Recibido handshake del Kernel");
 
 	char message[SOCKET_BUFFER_CAPACITY];
 
-	while(socket_receive(message, sockfd) > 0) {
-		printf("Message received: \"%s\"\n", message);
+	while(socket_receive_string(message, kernel_fd) > 0) {
+		printf("Recibido mensaje: \"%s\"\n", message);
 	}
 
-	socket_close(sockfd);
+	socket_close(kernel_fd);
 	free(file_system);
 
 	return 0;

@@ -4,7 +4,7 @@
 
 void quit(const char *err) {
 	if(err != NULL) {
-		log_report(err);
+		printf("%s\n", err);
 		exit(EXIT_FAILURE);
 	}
 	exit(EXIT_SUCCESS);
@@ -13,6 +13,10 @@ void quit(const char *err) {
 void guard(bool cond, const char *err) {
 	if(cond) return;
 	quit(err != NULL ? err : "Guard error");
+}
+
+void fdcheck(long fd) {
+	guard(fd != -1, strerror(errno));
 }
 
 void mkdirs(const char *path) {

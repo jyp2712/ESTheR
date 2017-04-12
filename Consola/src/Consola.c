@@ -1,28 +1,31 @@
+#include "Consola.h"
 #include <commons/config.h>
 #include "utils.h"
 #include "socket.h"
 #include "log.h"
-#include "Consola.h"
+#include "protocol.h"
 
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-	set_process_type(CONSOLE);
+	set_current_process(CONSOLE);
 
 	t_consola *consola = malloc(sizeof(t_consola));
 	leerConfiguracionConsola(consola, argv[1]);
 
 	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(consola->ip_kernel, consola->puerto_kernel);
+	protocol_send_handshake(kernel_fd);
 	puts("Conectado. Ya puede enviar mensajes. Escriba 'exit' para salir");
 
 //------------Envio de mensajes al servidor------------
 	char message[SOCKET_BUFFER_CAPACITY];
 
 	while(true) {
+		printf("> ");
 		fgets(message, SOCKET_BUFFER_CAPACITY, stdin);
 		message[strcspn(message, "\n")] = '\0';
 		if(!strcmp(message, "exit")) break;
-		socket_send(message, kernel_fd);
+		socket_send_string(message, kernel_fd);
 	}
 
 	free(consola);

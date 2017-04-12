@@ -2,19 +2,19 @@
 
 #include <sys/stat.h>
 
-static process_t process_type;
+static process_t current_process;
 
-void set_process_type(process_t type) {
-	process_type = type;
+void set_current_process(process_t spid) {
+	current_process = spid;
 }
 
-process_t get_process_type(void) {
-	return process_type;
+process_t get_current_process(void) {
+	return current_process;
 }
 
-const char *get_process_name(void) {
+const char *get_process_name(process_t spid) {
 	static char *process_names[] = {"kernel", "memoria", "fs", "cpu", "consola"};
-	return process_names[process_type];
+	return process_names[spid];
 }
 
 const char *get_resource_path() {
