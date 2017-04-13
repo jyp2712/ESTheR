@@ -17,11 +17,21 @@ int main(int argc, char **argv) {
 	//inicializar memoria
 	inicializar(config);
 
-	//crear servidor
-	crearServidor(config);
+	pid_t id = fork();
 
-	//interprete de comandos
-	interpreteDeComandos(config);
+	if(id > 0) {
+		//crear servidor
+		crearServidor(config);
+	}
+	else if(id == 0) {
+		//interprete de comandos
+		interpreteDeComandos(config);
+	}
+	else {
+		exit(EXIT_FAILURE);
+	}
+
+	//liberar memoria
 
 	free(config);
 
@@ -71,5 +81,27 @@ void crearServidor(t_memoria* config){
 }
 
 void interpreteDeComandos(t_memoria* config){
+	int finConsola = 0;
+	char comando[80];
 
+	printf("Escriba ? para ayuda de comandos disponibles\n");
+	do {
+		printf ("Comando: ");
+		scanf ("%s", comando);
+
+		if(strcmp(comando, "?") == 0) {
+			printf("Comandos disponibles:\n");
+			printf(" fin\n   Finaliza la terminal\n");
+			printf(" dump\n   Dump de la memoria\n");
+		}
+		else if(strcmp(comando, "fin") == 0) {
+			//terminar servidor
+			finConsola = 1;
+			printf("Proceso Memoria finalizado con éxito\n");
+		}
+		else if(strcmp(comando, "dump") == 0) {
+			printf("Dump...\n");
+		}
+	} while(!finConsola);
+	exit(EXIT_SUCCESS);
 }
