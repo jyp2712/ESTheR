@@ -1,5 +1,5 @@
 # Object files
-*.o
+#*.o
 *.ko
 *.obj
 *.elf
@@ -31,3 +31,12 @@
 # Debug files
 *.dSYM/
 *.su
+
+## Compiled files
+**.o
+**.d
+**/Debug/Consola
+**/Debug/CPU
+**/Debug/Kernel
+**/Debug/File_System
+**/Debug/Memoria
