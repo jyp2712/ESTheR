@@ -85,6 +85,19 @@ socket_t socket_init(const char *ip, const char *port) {
 	return sockfd;
 }
 
+socket_t socket_accept_v2(socket_t sv_sock) {
+	struct sockaddr rem_addr;
+	socklen_t addr_size = sizeof rem_addr;
+
+	socket_t cli_sock = accept(sv_sock, &rem_addr, &addr_size);
+
+	if (cli_sock == -1) {
+		log_report(strerror(errno));
+	}
+
+	return cli_sock;
+}
+
 socket_t socket_accept(socket_t sv_sock) {
 	struct sockaddr rem_addr;
 	socklen_t addr_size = sizeof rem_addr;

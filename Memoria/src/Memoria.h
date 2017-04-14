@@ -8,6 +8,8 @@
 #ifndef MEMORIA_H_
 #define MEMORIA_H_
 
+#include "protocol.h"
+
 typedef struct{
 	char* puerto;
 	int marcos;
@@ -22,8 +24,12 @@ void leerConfiguracion(t_memoria* config, char* path);
 
 void inicializar(t_memoria* config);
 
-void crearServidor(t_memoria* config);
+void crearServidor(t_memoria* config, char *shm);
 
-void interpreteDeComandos(t_memoria* config);
+int validarHandshake(socket_t sockfd, header_t *header);
+
+void procesarMensaje(socket_t sockfd);
+
+void interpreteDeComandos(t_memoria* config, char *shm);
 
 #endif /* MEMORIA_H_ */

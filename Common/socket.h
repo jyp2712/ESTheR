@@ -34,6 +34,14 @@ socket_t socket_listen(const char *port);
  * Función bloqueante que espera por conexiones en un socket servidor y las
  * acepta devolviendo el socket cliente.
  * @param sv_sock Descriptor del socket del servidor.
+ * @return Descriptor del socket del cliente, mismo comportamiento que accept.
+ */
+socket_t socket_accept_v2(socket_t sv_sock);
+
+/*
+ * Función bloqueante que espera por conexiones en un socket servidor y las
+ * acepta devolviendo el socket cliente.
+ * @param sv_sock Descriptor del socket del servidor.
  * @return Descriptor del socket del cliente.
  */
 socket_t socket_accept(socket_t sv_sock);

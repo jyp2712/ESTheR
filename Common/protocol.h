@@ -44,6 +44,14 @@ void protocol_header_send(header_t header, socket_t sockfd);
 /**
  * Recibe un encabezado de un determinado socket.
  * @param sockfd Descriptor del socket.
+ * @param header Cabecera del protocolo
+ * @return Cantidad de bytes leidos, mismo comportamiento que recv.
+ */
+int protocol_receive_header(socket_t sockfd, header_t *header);
+
+/**
+ * Recibe un encabezado de un determinado socket.
+ * @param sockfd Descriptor del socket.
  * @return Encabezado.
  */
 header_t protocol_header_receive(socket_t sockfd);

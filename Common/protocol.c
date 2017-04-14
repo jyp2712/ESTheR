@@ -20,6 +20,15 @@ void protocol_header_send(header_t header, socket_t sockfd) {
 	socket_send_bytes(buffer, size, sockfd);
 }
 
+int protocol_receive_header(socket_t sockfd, header_t *header) {
+	unsigned char buffer[HEADER_SIZE];
+
+	size_t r = socket_receive_bytes(buffer, HEADER_SIZE, sockfd);
+	serial_unpack(buffer, "CCL", &header->syspid, &header->opcode, &header->msgsize);
+
+	return r;
+}
+
 header_t protocol_header_receive(socket_t sockfd) {
 	unsigned char buffer[HEADER_SIZE];
 	header_t header;
