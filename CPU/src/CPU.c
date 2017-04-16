@@ -78,10 +78,22 @@ t_stack* t_stack_create(){
 	return stack;
 }
 
+bool esArgumento(t_nombre_variable identificador_variable){
+	if(isdigit(identificador_variable)){
+		return true;
+	}else{
+		return false;
+	}
+}
+
 // Falta diferenciar si es argumento o variable
 t_puntero definirVariable(t_nombre_variable identificador_variable){
 
-	log_inform("Defino variable '%c'", identificador_variable);
+	if(esArgumento(identificador_variable)){
+		log_inform("Defino nuevo argumento '%c'", identificador_variable);
+	} else {
+		log_inform("Defino nueva variable '%c'", identificador_variable);
+	}
 
 	//Agarro el ultimo stack
 	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
@@ -100,13 +112,26 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 		offsetStack = pcbActual->offsetStack = 0;
 	}
 
-	t_var* variable = malloc(sizeof(t_var));
-	variable->id = identificador_variable;
-	variable->mempos.offset = offsetStack;
-	variable->mempos.page = pageStack;
-	variable->mempos.size = sizeof(int);
+	if(esArgumento(identificador_variable)){
+		t_var* argumento = malloc(sizeof(t_var));
+		argumento->id = identificador_variable;
+		argumento->mempos.offset = offsetStack;
+		argumento->mempos.page = pageStack;
+		argumento->mempos.size = sizeof(int);
 
-	list_add(stack->vars, variable);
+		list_add(stack->vars, argumento);
+
+	} else {
+		t_var* variable = malloc(sizeof(t_var));
+		variable->id = identificador_variable;
+		variable->mempos.offset = offsetStack;
+		variable->mempos.page = pageStack;
+		variable->mempos.size = sizeof(int);
+
+		list_add(stack->vars, variable);
+	}
+
+
 
 	log_inform("'%c' -> Dirección stack definida: %i, %i, %i.", identificador_variable, pageStack, offsetStack, sizeof(int));
 
@@ -124,35 +149,36 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
 
 	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
 
-	if(stack->vars->elements_count > 0){
-		int i;
-		for(i = 0; i < stack->vars->elements_count; i++){
+	if(!esArgumento(identificador_variable)){
+		if(stack->vars->elements_count > 0){
+			int i;
+			for(i = 0; i < stack->vars->elements_count; i++){
+				t_var* variable = list_get(stack->vars, i);
+				if(variable->id == identificador_variable){
 
-			t_var* variable = list_get(stack->vars, i);
-			if(variable->id == identificador_variable){
+					t_puntero posicion = (variable->mempos.page * tamanioPagina) + variable->mempos.offset;
+					log_inform("Posicion obtenida: %i", posicion);
 
-				t_puntero posicion = (variable->mempos.page * tamanioPagina) + variable->mempos.offset;
-				log_inform("Posicion obtenida: %i", posicion);
-
-				return posicion;
+					return posicion;
+				}
 			}
 		}
-	}
+	} else {
+		if(stack->args->elements_count > 0){
+			int i;
+			for(i = 0; i < stack->args->elements_count; i++){
 
-	if(stack->args->elements_count > 0){
-		int i;
-		for(i = 0; i < stack->args->elements_count; i++){
+				t_var* argumento = list_get(stack->args, i);
+				if(argumento->id == identificador_variable){
 
-			t_var* argumento = list_get(stack->args, i);
-			if(argumento->id == identificador_variable){
+					t_puntero posicion = (argumento->mempos.page * tamanioPagina) + argumento->mempos.offset;
 
-				t_puntero posicion = (argumento->mempos.page * tamanioPagina) + argumento->mempos.offset;
-
-				return posicion;
+					return posicion;
+				}
 			}
 		}
-	}
 
+	}
 	return 1;
 
 }
