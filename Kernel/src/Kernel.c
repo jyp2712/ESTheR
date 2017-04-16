@@ -1,10 +1,13 @@
 #include "Kernel.h"
 #include <commons/config.h>
 #include <commons/string.h>
+#include <commons/collections/list.h>
 #include "utils.h"
 #include "socket.h"
 #include "protocol.h"
 #include "serial.h"
+#include "structures.h"
+
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -121,3 +124,61 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		printf("STACK_SIZE: %i\n", kernel->stack_size);
 		printf("----------------------------------------------\n");
 }
+
+t_pcb* crear_pcb_proceso (socket_t cli_sock, char* buffer){
+	t_pcb* element = (t_pcb*) malloc (sizeof(t_pcb));
+	int j =0;
+	unsigned int i, k;
+
+	element->idProcess = cli_sock;
+	element->PC = 0;
+	element->status = NEW;
+	element->priority = 0;
+	element->pagesCode = 1;
+	element->indexCode = (t_intructions*) malloc (PROGRAM_LINES*sizeof(t_intructions));
+
+	if (element->indexCode==NULL){
+		perror("Problemas reservando memoria");
+		exit (1);
+	}
+
+	char *buff = (char*) malloc(LINE_SIZE*sizeof(char));
+	if (buff==NULL){
+			perror("Problemas reservando memoria");
+			exit (1);
+		}
+
+	for (i=0;i<strlen(buffer);i++){
+		k = i;
+		while (buffer[k]!='\n'){
+			k++;
+		}
+
+		memset(buff, '\0', k);
+		strncpy(buff, buffer+i, k-i);
+
+		if (buff[i] != '#' && i!=k && strcmp(buff,"begin") != 0 && strcmp(buff,"end") != 0){
+			element->indexCode[j].start=i++;
+			element->indexCode[j].offset=k;
+			j++;
+			i=k;
+		}else{
+			if (strcmp(buff,"end") == 0){
+				i=strlen(buffer);
+			}else{
+				i=k;
+			}
+		}
+	}
+
+	element->indexTag.program = 't'; //Ver las etiquetas posibles
+
+	element->indexTag.PC = element->PC++;
+	element->indexStack = list_create();
+
+	//Falta inicializar los datos del stack que no entiendo dónde inicializarlo
+
+	element->exitCode = 0;
+	return element;
+}
+

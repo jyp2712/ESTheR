@@ -8,9 +8,13 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
 #include <semaphore.h>
+#include "socket.h"
+#include "structures.h"
 
 #define PACKAGESIZE 1024
 #define CANT_SEM 3
+
+enum {NEW, READY, EXEC, BLOCK, EXIT};
 
 typedef struct{
 	char* puerto_prog;
@@ -29,5 +33,7 @@ typedef struct{
 }t_kernel;
 
 void leerConfiguracionKernel(t_kernel*, char* path);
+
+t_pcb* crear_pcb_proceso (socket_t, char*);
 
 #endif /* KERNEL_H_ */
