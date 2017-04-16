@@ -12,7 +12,7 @@ typedef struct{
 }t_indexCode;
 
 typedef struct{
-	int program;
+	char program;
 	int PC;
 }t_programTag;
 
