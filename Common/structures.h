@@ -43,8 +43,8 @@ typedef struct {
 	t_intructions* indexCode;
 	t_programTag indexTag;
 	t_list* indexStack;
-	int stackOffsetPointer;
-	int stackPagePointer;
+	int offsetStack;
+	int pageStack;
 	int exitCode;
 } t_pcb;
 

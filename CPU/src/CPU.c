@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 	leerConfiguracionCPU(cpu, argv[1]);
 
 	// Harcodeo de elementos que me deberian llegar por socket para poder trabajar.
-	harcodeoParaProbarCPU();
+	//harcodeoParaProbarCPU();
 
 	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
@@ -43,20 +43,13 @@ void harcodeoParaProbarCPU() {
 	// El PCB me lo manda el kernel, yo solo creo el stack
 	pcbActual = malloc(sizeof(t_pcb));
 	pcbActual->indexStack = list_create();
-	pcbActual->stackOffsetPointer = 0;
-	pcbActual->stackPagePointer = 0;
-
-	char* instruccion[6];
-	instruccion[0] = "#!/usr/bin/ansisop";
-	instruccion[1] = "begin";
-	instruccion[2] = "variables a, b";
-	instruccion[3] = "a = 3";
-	instruccion[4] = "b = 5";
-	instruccion[5] = "a = b + 12";
-	instruccion[6] = "end";
+	pcbActual->offsetStack = 0;
+	pcbActual->pageStack = 0;
 
 	int i;
-	for (i = 0; i < 7; ++i) {
+	char* instruccion[100];
+	for (i = 0; i < 40; ++i) {
+		instruccion[i] = "variables a";
 		log_inform("La instruccion a parsear es: %s", instruccion[i]);
 		analizadorLinea(instruccion[i], &funcionesAnSISOP, &funcionesKernel);
 	}
@@ -80,11 +73,6 @@ t_stack* t_stack_create(){
 
 t_puntero definirVariable(t_nombre_variable identificador_variable){
 
-	log_inform("Definir variable");
-
-	int var_offset = pcbActual->stackOffsetPointer;
-	int var_pagina = pcbActual->stackPagePointer;
-
 	//Agarro el ultimo stack
 	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
 
@@ -94,22 +82,27 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 		list_add(pcbActual->indexStack, stack);
 	}
 
+	int offsetStack = pcbActual->offsetStack;
+	int pageStack = pcbActual->pageStack;
+
+	if(offsetStack >= tamanioPagina) {
+		pageStack ++;
+		offsetStack = pcbActual->offsetStack = 0;
+	}
+
 	t_var* variable = malloc(sizeof(t_var));
 	variable->id = identificador_variable;
-	variable->mempos.offset = var_offset;
-	variable->mempos.page = var_pagina;
+	variable->mempos.offset = offsetStack;
+	variable->mempos.page = pageStack;
 	variable->mempos.size = sizeof(int);
+	log_inform("'%c' -> Dirección stack definida: %i, %i, %i.", identificador_variable, pageStack, offsetStack, sizeof(int));
 
-	list_add(stack->vars, variable);
+	pcbActual->pageStack = pageStack;
+	pcbActual->offsetStack += sizeof(int);
 
-	int total_heap_offset = tamanioPagina + pcbActual->stackOffsetPointer;
-	pcbActual->stackOffsetPointer += sizeof(int);
-	pcbActual->stackPagePointer = (total_heap_offset + sizeof(int)) / tamanioPagina;
-
-	log_inform("'%c' -> Dirección lógica definida: %i, %i, %i.", identificador_variable, var_pagina, var_offset, sizeof(int));
-	log_inform("La posicion retornada: %i", total_heap_offset);
-
-	return total_heap_offset;
+	t_puntero posicion = (pageStack * tamanioPagina) + offsetStack;
+	log_inform("Posicion retornada %i", posicion);
+	return posicion;
 }
 
 // @return	Donde se encuentre la variable buscada
@@ -117,7 +110,6 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
 
 	t_puntero posicion;
 
-	malloc(identificador_variable);
 	log_inform("Obtengo posicion de %s", &identificador_variable);
 
 	return posicion;
