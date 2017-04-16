@@ -46,10 +46,17 @@ void harcodeoParaProbarCPU() {
 	pcbActual->offsetStack = 0;
 	pcbActual->pageStack = 0;
 
-	int i;
 	char* instruccion[100];
-	for (i = 0; i < 40; ++i) {
-		instruccion[i] = "variables a";
+	instruccion[0] = "variables a, b";
+	instruccion[1] = "a = 3";
+	instruccion[2] = "b = 3";
+
+	int i;
+	//char* instruccion[100];
+	for (i = 0; i < 4; ++i) {
+		//instruccion[1] = "variables a, b";
+		//instruccion[2] = "a = 3";
+		//instruccion[3] = "b = 3";
 		log_inform("La instruccion a parsear es: %s", instruccion[i]);
 		analizadorLinea(instruccion[i], &funcionesAnSISOP, &funcionesKernel);
 	}
@@ -71,7 +78,10 @@ t_stack* t_stack_create(){
 	return stack;
 }
 
+// Falta diferenciar si es argumento o variable
 t_puntero definirVariable(t_nombre_variable identificador_variable){
+
+	log_inform("Defino variable '%c'", identificador_variable);
 
 	//Agarro el ultimo stack
 	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
@@ -95,24 +105,56 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 	variable->mempos.offset = offsetStack;
 	variable->mempos.page = pageStack;
 	variable->mempos.size = sizeof(int);
+
+	list_add(stack->vars, variable);
+
 	log_inform("'%c' -> Dirección stack definida: %i, %i, %i.", identificador_variable, pageStack, offsetStack, sizeof(int));
 
 	pcbActual->pageStack = pageStack;
 	pcbActual->offsetStack += sizeof(int);
 
 	t_puntero posicion = (pageStack * tamanioPagina) + offsetStack;
-	log_inform("Posicion retornada %i", posicion);
+	log_inform("Posicion de '%c' es %i", identificador_variable, posicion);
 	return posicion;
 }
 
-// @return	Donde se encuentre la variable buscada
 t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
 
-	t_puntero posicion;
+	log_inform("Obtengo posicion de '%c'", identificador_variable);
 
-	log_inform("Obtengo posicion de %s", &identificador_variable);
+	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
 
-	return posicion;
+	if(stack->vars->elements_count > 0){
+		int i;
+		for(i = 0; i < stack->vars->elements_count; i++){
+
+			t_var* variable = list_get(stack->vars, i);
+			if(variable->id == identificador_variable){
+
+				t_puntero posicion = (variable->mempos.page * tamanioPagina) + variable->mempos.offset;
+				log_inform("Posicion obtenida: %i", posicion);
+
+				return posicion;
+			}
+		}
+	}
+
+	if(stack->args->elements_count > 0){
+		int i;
+		for(i = 0; i < stack->args->elements_count; i++){
+
+			t_var* argumento = list_get(stack->args, i);
+			if(argumento->id == identificador_variable){
+
+				t_puntero posicion = (argumento->mempos.page * tamanioPagina) + argumento->mempos.offset;
+
+				return posicion;
+			}
+		}
+	}
+
+	return 1;
+
 }
 
 t_valor_variable dereferenciar(t_puntero direccion_variable){
