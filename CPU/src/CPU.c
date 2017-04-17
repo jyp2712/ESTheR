@@ -65,9 +65,7 @@ void harcodeoParaProbarCPU() {
 
 t_stack* t_stack_create(){
 	t_stack* stack = malloc(sizeof(t_stack));
-	stack->cantidad_args = 0;
 	stack->args = list_create();
-	stack->cantidad_vars = 0;
 	stack->vars = list_create();
 	stack->retPos = 0;
 	stack->retVar.offset = 0;
