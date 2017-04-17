@@ -32,4 +32,34 @@ void fdcheck(long fd);
  */
 void mkdirs(const char *path);
 
+/**
+ * Lee una línea de stdin y la guarda en buffer.
+ * @param buffer Búfer donde se guardará la cadena leída.
+ */
+void input(char *buffer);
+
+/**
+ * Compara dos cadenas y devuelve un valor lógico indicando si son iguales.
+ * No tiene en cuenta mayúsculas y minúsculas.
+ * @param str1 Cadena 1.
+ * @param str1 Cadena 2.
+ * @return Valor indicando si la cadena 1 es igual a la cadena 2.
+ */
+bool streq(const char *str1, const char *str2);
+
+/**
+ * Devuelve una cadena con la representación ISO 8601 de un tiempo dado.
+ * @param time Tiempo que se quiere convertir a ISO 8601.
+ * @return Cadena representando un tiempo.
+ */
+const char *datetime(time_t time);
+
+/**
+ * Devuelve una cadena con una diferencia de tiempos expresada en hh:mm:ss.
+ * @param t1 Tiempo inicial.
+ * @param t2 Tiempo final.
+ * @return Cadena con el intervalo de tiempo t2 - t1.
+ */
+const char *timediff(time_t t1, time_t t2);
+
 #endif /* utils_h */

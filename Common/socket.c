@@ -165,7 +165,7 @@ static size_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
 			return 0;
 		}
 		bytes_received += n;
-		if(len == SOCKET_BUFFER_CAPACITY && buf[bytes_received - 1] == '\0') {
+		if(len == BUFFER_CAPACITY && buf[bytes_received - 1] == '\0') {
 			break;
 		}
 	}
@@ -174,7 +174,7 @@ static size_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
 }
 
 size_t socket_receive_string(char *message, socket_t sockfd) {
-	size_t bytes_received = recvall(sockfd, (unsigned char *) message, SOCKET_BUFFER_CAPACITY);
+	size_t bytes_received = recvall(sockfd, (unsigned char *) message, BUFFER_CAPACITY);
 	if(bytes_received > 0) {
 		log_inform("Received string: \"%s\"", message);
 	}

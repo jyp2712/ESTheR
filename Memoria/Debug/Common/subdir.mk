@@ -9,6 +9,7 @@ C_SRCS += \
 /home/utnso/git/tp-2017-1c-System-Buzz/Common/protocol.c \
 /home/utnso/git/tp-2017-1c-System-Buzz/Common/serial.c \
 /home/utnso/git/tp-2017-1c-System-Buzz/Common/socket.c \
+/home/utnso/git/tp-2017-1c-System-Buzz/Common/thread.c \
 /home/utnso/git/tp-2017-1c-System-Buzz/Common/utils.c 
 
 OBJS += \
@@ -17,6 +18,7 @@ OBJS += \
 ./Common/protocol.o \
 ./Common/serial.o \
 ./Common/socket.o \
+./Common/thread.o \
 ./Common/utils.o 
 
 C_DEPS += \
@@ -25,6 +27,7 @@ C_DEPS += \
 ./Common/protocol.d \
 ./Common/serial.d \
 ./Common/socket.d \
+./Common/thread.d \
 ./Common/utils.d 
 
 
@@ -58,6 +61,13 @@ Common/serial.o: /home/utnso/git/tp-2017-1c-System-Buzz/Common/serial.c
 	@echo ' '
 
 Common/socket.o: /home/utnso/git/tp-2017-1c-System-Buzz/Common/socket.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C Compiler'
+	gcc -std=gnu11 -I"/home/utnso/git/tp-2017-1c-System-Buzz/Common" -O0 -g3 -pedantic -Wall -Wextra -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+Common/thread.o: /home/utnso/git/tp-2017-1c-System-Buzz/Common/thread.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
 	gcc -std=gnu11 -I"/home/utnso/git/tp-2017-1c-System-Buzz/Common" -O0 -g3 -pedantic -Wall -Wextra -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"

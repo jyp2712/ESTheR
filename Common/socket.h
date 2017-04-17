@@ -3,8 +3,6 @@
 
 #include "utils.h"
 
-#define SOCKET_BUFFER_CAPACITY 1024
-
 typedef int socket_t;
 
 typedef struct {

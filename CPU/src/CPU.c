@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
 	puts("Conectado.");
 
 	//------------Envio de mensajes al servidor------------
-	char message[SOCKET_BUFFER_CAPACITY];
+	char message[BUFFER_CAPACITY];
 
 	while(socket_receive_string(message, kernel_fd) > 0) {
 		printf("Recibido mensaje: \"%s\"\n", message);

@@ -18,7 +18,7 @@
 #include <semaphore.h>
 
 void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
-	char buffer[SOCKET_BUFFER_CAPACITY];
+	char buffer[BUFFER_CAPACITY];
 
 	fdset_t read_fds, all_fds = socket_set_create();
 	socket_set_add(mem_fd, &all_fds);
@@ -29,9 +29,7 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 
 	while(true) {
 		read_fds = all_fds;
-		puts("Selecting");
 		fdcheck(select(read_fds.max + 1, &read_fds.set, NULL, NULL, NULL));
-		puts("Selected");
 
 		for(socket_t i = 0; i <= all_fds.max; i++) {
 			if(!FD_ISSET(i, &read_fds.set)) continue;

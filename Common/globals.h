@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <commons/string.h>
 
+#define BUFFER_CAPACITY 1024
+
 typedef enum {KERNEL, MEMORY, FS, CPU, CONSOLE} process_t;
 
 /**

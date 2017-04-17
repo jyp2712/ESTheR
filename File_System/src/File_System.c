@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 	guard(header.opcode == OP_HANDSHAKE && header.syspid == KERNEL, "Unexpected handshake");
 	puts("Recibido handshake del Kernel");
 
-	char message[SOCKET_BUFFER_CAPACITY];
+	char message[BUFFER_CAPACITY];
 
 	while(socket_receive_string(message, kernel_fd) > 0) {
 		printf("Recibido mensaje: \"%s\"\n", message);
