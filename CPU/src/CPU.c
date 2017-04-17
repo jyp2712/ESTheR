@@ -6,6 +6,7 @@
 #include "log.h"
 #include <commons/collections/list.h>
 #include "structures.h"
+#include <ctype.h>
 
 #define tamanioPagina 512
 
@@ -53,7 +54,7 @@ void harcodeoParaProbarCPU() {
 
 	int i;
 	//char* instruccion[100];
-	for (i = 0; i < 4; ++i) {
+	for (i = 0; i < 3; ++i) {
 		//instruccion[1] = "variables a, b";
 		//instruccion[2] = "a = 3";
 		//instruccion[3] = "b = 3";
@@ -192,6 +193,7 @@ t_valor_variable dereferenciar(t_puntero direccion_variable){
 	return valorVariable;
 }
 
+//Inserta una copia del valor en la variable ubicada en direccion_variable.
 void asignar(t_puntero direccion_variable, t_valor_variable valor){
 
 	log_inform("Asignar valor");
