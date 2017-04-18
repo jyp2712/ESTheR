@@ -5,7 +5,6 @@
 #include "log.h"
 #include "protocol.h"
 #include "thread.h"
-#include <time.h>
 
 // Define el máximo de programas concurrentes para cada consola
 // Por ahí podríamos ponerlo en el archivo de configuración
@@ -78,7 +77,10 @@ int main(int argc, char **argv) {
 			clear_screen();
 		} else if(string_starts_with(command, "run ")) {
 			const char *path = command + 4;
-			socket_send_string(path, kernel_fd);
+
+			char buffer[BUFFER_CAPACITY];
+			readfile(path, buffer);
+			socket_send_string(buffer, kernel_fd);
 //			run_program(path);
 		}
 	}

@@ -39,6 +39,16 @@ void mkdirs(const char *path);
 void input(char *buffer);
 
 /**
+ * Lee un archivo de texto y lo copia en un búfer de tamaño BUFFER_CAPACITY.
+ * La ruta del archivo puede ser absoluta o relativa. Si es relativa, los
+ * archivos se toman del directorio ~/tpsorsc/scripts.
+ * @param path Ruta al archivo que se quiere leer.
+ * @param buffer Búfer donde se almacenará el contenido del archivo.
+ * @return Valor lógico indicando si se pudo leer el archivo.
+ */
+bool readfile(const char *path, char *buffer);
+
+/**
  * Compara dos cadenas y devuelve un valor lógico indicando si son iguales.
  * No tiene en cuenta mayúsculas y minúsculas.
  * @param str1 Cadena 1.

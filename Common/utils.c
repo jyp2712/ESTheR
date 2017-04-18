@@ -33,6 +33,31 @@ void input(char *buffer) {
 	buffer[strcspn(buffer, "\n")] = '\0';
 }
 
+bool readfile(const char *path, char *buffer) {
+	if(!string_starts_with(path, "/")) {
+		char *rpath = string_duplicate(get_resource_path());
+		string_append(&rpath, "scripts/");
+		string_append(&rpath, path);
+		path = rpath;
+	}
+
+	FILE *file = fopen(path, "rb");
+	if(file == NULL) {
+		log_report("Couldn't open resource at %s", path);
+		return false;
+	}
+
+	fseek(file, 0, SEEK_END);
+	long fsize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+	fread(buffer, fsize, 1, file);
+
+	bool ret = ferror(file) == 0;
+	fclose(file);
+	buffer[fsize] = '\0';
+	return ret;
+}
+
 bool streq(const char *str1, const char *str2) {
 	return string_equals_ignore_case((char*) str1, (char*) str2);
 }
