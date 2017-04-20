@@ -9,6 +9,8 @@
 typedef struct{
 	char* ip_kernel;
 	char* puerto_kernel;
+	char* ip_memoria;
+	char* puerto_memoria;
 }t_cpu;
 
 void leerConfiguracionCPU(t_cpu* cpu, char* path);

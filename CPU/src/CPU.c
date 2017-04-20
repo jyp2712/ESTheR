@@ -8,54 +8,61 @@
 #include "structures.h"
 #include <ctype.h>
 
-#define tamanioPagina 512
+#define tamanioPagina 10
 
-void harcodeoParaProbarCPU();
 t_stack* t_stack_create();
 bool esArgumento(t_nombre_variable identificador_variable);
 t_pcb* pcbActual;
+void ejecutarPrograma();
 
 int main(int argc, char **argv) {
+
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(CPU);
 
 	t_cpu* cpu = malloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
 
-	// Harcodeo de elementos que me deberian llegar por socket para poder trabajar.
-	harcodeoParaProbarCPU();
-
 	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
 	protocol_send_handshake(kernel_fd);
 	puts("Conectado.");
 
-	//------------Envio de mensajes al servidor------------
-	char message[BUFFER_CAPACITY];
+	/* Descomentar cuando la Memoria este preparada para recibir CPUs
+	puts("Conectándose a la Memoria...");
+	int memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
+	protocol_send_handshake(memoria_fd);
+	puts("Conectado.");
+	*/
 
+	//Espero un mensaje del Kernel
+	char message[BUFFER_CAPACITY];
 	while(socket_receive_string(message, kernel_fd) > 0) {
-		printf("Recibido mensaje: \"%s\"\n", message);
+		ejecutarPrograma();
 	}
 
 	free(cpu);
 	socket_close(kernel_fd);
+	// socket_close(memoria_fd);
 	return 0;
+
 }
 
-void harcodeoParaProbarCPU() {
+void ejecutarPrograma(){
 	// El PCB me lo manda el kernel, yo solo creo el stack
 	pcbActual = malloc(sizeof(t_pcb));
 	pcbActual->indexStack = list_create();
-	pcbActual->offsetStack = 0;
-	pcbActual->pageStack = 0;
+	pcbActual->stackPointer = 0;
 
+	log_inform("Tamaño de pagina: %i", tamanioPagina);
 	char* instruccion[100];
-	instruccion[0] = "variables a, b";
-	instruccion[1] = "a = 3";
-	instruccion[2] = "b = 3";
-
 	int i;
-	for (i = 0; i < 3; ++i) {
+	instruccion[0] = "variables a, b, c, d";
+	instruccion[1] = "a = 3";
+	instruccion[2] = "b = 5";
+	instruccion[3] = "c = 7";
+	instruccion[4] = "d = 9";
+	for (i = 0; i <= 4; ++i) {
 		log_inform("La instruccion a parsear es: %s", instruccion[i]);
 		analizadorLinea(instruccion[i], &funcionesAnSISOP, &funcionesKernel);
 	}
@@ -100,18 +107,18 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 		list_add(pcbActual->indexStack, stack);
 	}
 
-	int offsetStack = pcbActual->offsetStack;
-	int pageStack = pcbActual->pageStack;
+	int pageStack = 0;
+	int stackPointer = pcbActual->stackPointer;
 
-	if(offsetStack >= tamanioPagina) {
-		pageStack ++;
-		offsetStack = pcbActual->offsetStack = 0;
+	while(stackPointer >= tamanioPagina){
+		(pageStack)++;
+		stackPointer -= tamanioPagina;
 	}
 
 	if(esArgumento(identificador_variable)){
 		t_var* argumento = malloc(sizeof(t_var));
 		argumento->id = identificador_variable;
-		argumento->mempos.offset = offsetStack;
+		argumento->mempos.offset = stackPointer;
 		argumento->mempos.page = pageStack;
 		argumento->mempos.size = sizeof(int);
 
@@ -120,19 +127,18 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 	} else {
 		t_var* variable = malloc(sizeof(t_var));
 		variable->id = identificador_variable;
-		variable->mempos.offset = offsetStack;
+		variable->mempos.offset = stackPointer;
 		variable->mempos.page = pageStack;
 		variable->mempos.size = sizeof(int);
 
 		list_add(stack->vars, variable);
 	}
 
-	log_inform("'%c' -> Dirección stack definida: %i, %i, %i.", identificador_variable, pageStack, offsetStack, sizeof(int));
+	log_inform("'%c' -> Dirección stack definida: %i, %i, %i.", identificador_variable, pageStack, stackPointer, sizeof(int));
 
-	pcbActual->pageStack = pageStack;
-	pcbActual->offsetStack += sizeof(int);
+	pcbActual->stackPointer += sizeof(int);
 
-	t_puntero posicion = (pageStack * tamanioPagina) + offsetStack;
+	t_puntero posicion = (pageStack * tamanioPagina) + stackPointer;
 	log_inform("Posicion de '%c' es %i", identificador_variable, posicion);
 	return posicion;
 }
@@ -173,7 +179,6 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
 		}
 	}
 	return 1;
-
 }
 
 t_valor_variable dereferenciar(t_puntero direccion_variable){
@@ -210,10 +215,14 @@ void leerConfiguracionCPU(t_cpu* cpu, char* path) {
 
 	cpu->ip_kernel = config_get_string_value(config, "IP_KERNEL");
 	cpu->puerto_kernel = config_get_string_value(config, "PUERTO_KERNEL");
+	cpu->ip_memoria = config_get_string_value(config, "IP_MEMORIA");
+	cpu->puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");
 
 	printf("---------------Mi configuración---------------\n");
 	printf("IP KERNEL: %s\n", cpu->ip_kernel);
 	printf("PUERTO KERNEL: %s\n", cpu->puerto_kernel);
+	printf("IP MEMORIA: %s\n", cpu->ip_memoria);
+	printf("PUERTO MEMORIA: %s\n", cpu->puerto_memoria);
 	printf("----------------------------------------------\n");
 }
 

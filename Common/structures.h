@@ -48,8 +48,7 @@ typedef struct {
 	t_instruction* indexCode;	// Conjunto de instrucciones del programa
 	t_programTag indexTag;		// (Esto todavía no entiendo bien qué es) <-- alguien que lo entienda que reemplace este comentario
 	t_list* indexStack;			// Lista con los elementos de la pila de usuario del programa.
-	int offsetStack;			// Offset actual del stack
-	int pageStack;				// Pagina actual del stack
+	int stackPointer;			// Offset del stack
 	int exitCode;				// Código de retorno del programa.
 } t_pcb;
 
