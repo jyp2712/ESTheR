@@ -24,7 +24,7 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 
 	fdset_t read_fds, all_fds = socket_set_create();
 	socket_set_add(mem_fd, &all_fds);
-	socket_set_add(fs_fd, &all_fds);
+//	socket_set_add(fs_fd, &all_fds);
 
 	socket_t sv_sock = socket_init(NULL, port);
 	socket_set_add(sv_sock, &all_fds);
@@ -37,10 +37,10 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 			if(!FD_ISSET(i, &read_fds.set)) continue;
 			if(i == sv_sock) {
 				socket_t cli_sock = socket_accept(sv_sock);
-				header_t header = protocol_header_receive(cli_sock);
-				if(header.opcode == OP_HANDSHAKE && (header.syspid == CONSOLE || header.syspid == CPU)) {
+				process_t cli_process = protocol_handshake_receive(cli_sock);
+				if(cli_process == CONSOLE || cli_process == CPU) {
 					socket_set_add(cli_sock, &all_fds);
-					printf("Recibido handshake de%s\n", header.syspid == CPU ? "l CPU" : " la Consola");
+					printf("Recibido handshake de%s\n", cli_process == CPU ? "l CPU" : " la Consola");
 				} else {
 					socket_close(cli_sock);
 				}
@@ -71,15 +71,16 @@ int main(int argc, char **argv) {
 	
 	puts("Conectándose a la Memoria...");
 	int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
-	protocol_send_handshake(memoria_fd);
+	protocol_handshake_send(memoria_fd);
 	puts("Conectado a la Memoria.");
 
-	puts("Conectándose al File System...");
-	int fs_fd = socket_connect(kernel->ip_fs, kernel->puerto_fs);
-	protocol_send_handshake(fs_fd);
-	puts("Conectado al File System.");
+//	Lo comento para que no joda. Total por ahora no lo necesitamos.
+//	puts("Conectándose al File System...");
+	int fs_fd = 0; // socket_connect(kernel->ip_fs, kernel->puerto_fs);
+//	protocol_send_handshake(fs_fd);
+//	puts("Conectado al File System.");
 
-	gestion_datos_pcb ();
+	gestion_datos_pcb();
 
 	init_server(kernel->puerto_prog, memoria_fd, fs_fd);
 
@@ -127,80 +128,46 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		printf("----------------------------------------------\n");
 }
 
-t_pcb* crear_pcb_proceso (t_metadata_program* program){
-	t_pcb* element = (t_pcb*) malloc (sizeof(t_pcb));
-
-	if (element==NULL){
-			perror("Problemas reservando memoria");
-			exit (1);
-		}
+t_pcb* crear_pcb_proceso(t_metadata_program* program) {
+	t_pcb *element = alloc(sizeof(t_pcb));
 
 	element->idProcess = 0;
 	element->PC = program->instruccion_inicio;
 	element->status = NEW;
-	element->pagesCode=0;
+	element->pagesCode = 0;
 	element->instructions = program->instrucciones_size;
-	element->indexCode = (t_intructions*) malloc (program->instrucciones_size*sizeof(t_intructions));
-
-	if (element->indexCode==NULL){
-		perror("Problemas reservando memoria");
-		exit (1);
-	}
 	element->indexCode = program->instrucciones_serializado;
 
+	const int NUM_TAGS = program->cantidad_de_etiquetas + program->cantidad_de_funciones;
+	element->indexTag = alloc(NUM_TAGS * sizeof(t_programTag));
 
-	element->indexTag = (t_programTag*) malloc ((program->cantidad_de_etiquetas+program->cantidad_de_funciones)*sizeof(t_programTag));
+	char tag[LINE_SIZE];
+	char *p = tag, *q = program->etiquetas;
+	int numtag = 0;
 
-	if (element->indexTag==NULL){
-		perror("Problemas reservando memoria");
-		exit (1);
+	while(numtag < NUM_TAGS) {
+		*p++ = *q++;
+		if(*(p-1) != '\0') continue;
+		element->indexTag[numtag].name = string_duplicate(tag);
+		element->indexTag[numtag].PC = metadata_buscar_etiqueta(tag, program->etiquetas, program->etiquetas_size);
+		p = tag;
+		q += sizeof(t_puntero_instruccion);
+		numtag++;
 	}
-
-	for (int i=0;i<(program->cantidad_de_etiquetas+program->cantidad_de_funciones);i++){
-		element->indexTag[i].program = (char*) malloc(program->etiquetas_size*sizeof(char));
-	 }
-
-
-	char* buff = (char*) malloc(program->etiquetas_size*sizeof(char));
-	int j =0;
-	unsigned int i,k;
-	for (i=0;i<program->etiquetas_size;i=i+2){
-		k = i;
-		while (program->etiquetas[k]!='\0'){
-		k++;
-		}
-		memset(buff, '\0', k);
-
-		if (i!=k && i!=0){
-			strncpy(buff, program->etiquetas+i-1, k);
-			strcpy(element->indexTag[j].program, buff);
-			element->indexTag[j].PC = metadata_buscar_etiqueta(element->indexTag[j].program, program->etiquetas, program->etiquetas_size);
-			j++;
-		}else{
-			if (i!=k){
-				strncpy(buff, program->etiquetas, k);
-				strcpy(element->indexTag[j].program, buff);
-				element->indexTag[j].PC = metadata_buscar_etiqueta(element->indexTag[j].program, program->etiquetas, program->etiquetas_size);
-				j++;
-			}
-		}
-	i=k;
-	}
-
 
 	element->indexStack = list_create();
 	element->stackPointer = 0;
-
 	element->exitCode = 0;
+
 	return element;
 }
 
-void gestion_datos_pcb (){
+void gestion_datos_pcb() {
+	char buffer[PROGRAM_SIZE];
+	readfile("completo.ansisop", buffer);
 
-	const char * buffer ="#!/usr/bin/ansisop\n\nfunction imprimir\n    wait mutexA\n        print $0+1\n    signal mutexB\nend\n\nbegin\nvariables f,  A,  g\n    A = 	0\n    !Global = 1+A\n    print !Global\n    jnz !Global Siguiente \n:Proximo\n	\n    f = 8	  \n    g <- doble !Global	\n    io impresora 20\n	:Siguiente	\n  imprimir A\n    textPrint    Hola Mundo!\n    \n    sumar1 &g	\n	    print 		g    \n    \n    sinParam\n    \nend\n\nfunction sinParam\n	textPrint Bye\nend\n\n#Devolver el doble del\n#primer parametro\nfunction doble\nvariables f\n    f = $0 + $0\n    return f\nend\n\nfunction sumar1\n	*$0 = 1 + *$0\nend\n";
 	t_metadata_program* dataProgram = metadata_desde_literal(buffer);
-
-	t_pcb* pcb = crear_pcb_proceso (dataProgram);
+	t_pcb* pcb = crear_pcb_proceso(dataProgram);
 
 	printf("PID: %d\n", pcb->idProcess);
 	printf("PC: %d\n", pcb->PC);
@@ -212,7 +179,7 @@ void gestion_datos_pcb (){
 		printf("Fin linea de codigo: %d\n", pcb->indexCode[i].offset);
 	}
 	for (int i=0;i<(dataProgram->cantidad_de_etiquetas+dataProgram->cantidad_de_funciones);i++){
-		printf("Etiqueta: %s\n", pcb->indexTag[i].program);
+		printf("Etiqueta: %s\n", pcb->indexTag[i].name);
 		printf("Puntero de etiqueta: %d\n", pcb->indexTag[i].PC);
 	}
 

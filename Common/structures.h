@@ -12,19 +12,20 @@
  * de tres variables: su número de página (page), su desplazamiento
  * dentro de la página (offset) y el tamaño que ocupa (size).
  */
-typedef struct{
+typedef struct {
 	int page;
 	int offset;
 	int size;
 }t_indexCode;
 
-typedef struct{
-	char* program;
-	t_puntero_instruccion  PC;
-}t_programTag;
+// Etiqueta AnSISOP
+typedef struct {
+	const char* name;
+	t_puntero_instruccion PC;
+} t_programTag;
 
 // Variable AnSISOP
-typedef struct{
+typedef struct {
 	char id;
 	t_indexCode mempos;
 }t_var; // o argumento, funcionan igual
@@ -46,7 +47,7 @@ typedef struct {
 	int pagesCode;				// Cantidad de páginas de memoria que ocupa el código
 	t_instruction* indexCode;	// Conjunto de instrucciones del programa
 	int instructions;			// Cantidad de instrucciones del programa
-	t_programTag* indexTag;		// (Esto todavía no entiendo bien qué es) <-- alguien que lo entienda que reemplace este comentario
+	t_programTag* indexTag;		// Array con todas las etiquetas del programa.
 	t_list* indexStack;			// Lista con los elementos de la pila de usuario del programa.
 	int stackPointer;			// Offset del stack
 	int exitCode;				// Código de retorno del programa.

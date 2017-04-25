@@ -72,4 +72,13 @@ const char *datetime(time_t time);
  */
 const char *timediff(time_t t1, time_t t2);
 
+/**
+ * Reserva memoria para el tamaño especificado. La memoria se completa con
+ * ceros. Si no se pudo reservar memoria, termina el programa e imprime
+ * un mensaje de error.
+ * @param size Tamaño del bloque de memoria.
+ * @return Puntero al bloque de memoria asignado.
+ */
+void *alloc(size_t size);
+
 #endif /* utils_h */

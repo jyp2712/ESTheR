@@ -76,3 +76,9 @@ const char *timediff(time_t t1, time_t t2) {
 	unsigned hours = minutes / 60;
 	return string_from_format("%02u:%02u:%02u", hours, minutes, seconds);
 }
+
+void *alloc(size_t size) {
+	void *p = calloc(1, size);
+	guard(p != NULL, "Problemas reservando memoria");
+	return p;
+}

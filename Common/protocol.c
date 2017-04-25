@@ -1,68 +1,74 @@
 #include "protocol.h"
 #include "serial.h"
 #include "log.h"
+#include <stdarg.h>
 
-#define HEADER_SIZE 6
+#define HEADER_SIZE 8
 
-header_t protocol_header(unsigned char opcode, size_t msgsize) {
+header_t protocol_header(unsigned char opcode) {
 	header_t header;
-
+	memset(&header, 0, sizeof header);
 	header.syspid = get_current_process();
 	header.opcode = opcode;
-	header.msgsize = msgsize;
-
 	return header;
 }
 
-void protocol_header_send(header_t header, socket_t sockfd) {
+static void send_header(header_t header, socket_t sockfd) {
 	unsigned char buffer[HEADER_SIZE];
 	size_t size = serial_pack(buffer, "CCL", header.syspid, header.opcode, header.msgsize);
 	socket_send_bytes(buffer, size, sockfd);
 }
 
-int protocol_receive_header(socket_t sockfd, header_t *header) {
-	unsigned char buffer[HEADER_SIZE];
-
-	size_t r = socket_receive_bytes(buffer, HEADER_SIZE, sockfd);
-	serial_unpack(buffer, "CCL", &header->syspid, &header->opcode, &header->msgsize);
-
-	return r;
-}
-
-header_t protocol_header_receive(socket_t sockfd) {
+static header_t receive_header(socket_t sockfd) {
 	unsigned char buffer[HEADER_SIZE];
 	header_t header;
-	header.opcode = OP_UNDEFINED;
+	memset(&header, 0, sizeof header);
 
-	socket_receive_bytes(buffer, HEADER_SIZE, sockfd);
-	serial_unpack(buffer, "CCL", &header.syspid, &header.opcode, &header.msgsize);
+	if(socket_receive_bytes(buffer, HEADER_SIZE, sockfd) > 0) {
+		serial_unpack(buffer, "CCL", &header.syspid, &header.opcode, &header.msgsize);
+	}
 
 	return header;
 }
 
-packet_t protocol_packet(header_t header, unsigned char *payload) {
+packet_t protocol_packet(header_t header, ...) {
 	packet_t packet;
-
 	packet.header = header;
-	packet.payload = payload;
-
+	if(header.msgsize == 0) {
+		packet.payload = NULL;
+	} else {
+		va_list ap;
+		va_start(ap, header);
+		packet.payload = va_arg(ap, unsigned char *);
+		va_end(ap);
+	}
 	return packet;
 }
 
-void protocol_packet_send(const packet_t packet, socket_t sockfd) {
-	protocol_header_send(packet.header, sockfd);
+void protocol_packet_send(packet_t packet, socket_t sockfd) {
+	send_header(packet.header, sockfd);
 	socket_send_bytes(packet.payload, packet.header.msgsize, sockfd);
 	log_inform("Sent packet (%ld bytes)", packet.header.msgsize + HEADER_SIZE);
 }
 
 void protocol_packet_receive(packet_t *packet, socket_t sockfd) {
-	packet->header = protocol_header_receive(sockfd);
+	packet->header = receive_header(sockfd);
 	socket_receive_bytes(packet->payload, packet->header.msgsize, sockfd);
 	log_inform("Received packet from %s (%ld bytes)",
 			get_process_name(packet->header.syspid), packet->header.msgsize + HEADER_SIZE);
 }
 
-void protocol_send_handshake(socket_t sockfd) {
-	protocol_header_send(protocol_header(OP_HANDSHAKE, 0), sockfd);
+void protocol_handshake_send(socket_t sockfd) {
+	send_header(protocol_header(OP_HANDSHAKE), sockfd);
 	log_inform("Sent handshake");
+}
+
+process_t protocol_handshake_receive(socket_t sockfd) {
+	header_t header = receive_header(sockfd);
+	if(header.opcode != OP_HANDSHAKE) {
+		log_report("Received another operation while waiting for handshake");
+	} else {
+		log_inform("Received handshake from %s", get_process_name(header.syspid));
+	}
+	return header.syspid;
 }
