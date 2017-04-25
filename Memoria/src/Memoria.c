@@ -101,7 +101,8 @@ void *procesarCliente(socket_t *sockfd) {
 
 	while(1) {
 		// handle data from a client
-		if(protocol_receive_header(*sockfd, &header) <= 0) {
+		packet_t packet = protocol_packet_receive(*sockfd);
+		if(packet.header.opcode == OP_UNDEFINED) {
 			quitarConexion(*sockfd, "Ocurrió un error o se cerró la conexión desde el cliente");
 			return NULL;
 		}
@@ -131,14 +132,14 @@ int validarHandshake(socket_t sockfd, header_t *header) {
 		h.syspid = 0;
 		h.opcode = 0;
 		h.msgsize = 0;
-		protocol_header_send(h, sockfd);
+		protocol_packet_send(protocol_packet(h), sockfd);
 
 		return 0;
 	}
 	h.syspid = 0;
 	h.opcode = 1;
 	h.msgsize = 0;
-	protocol_header_send(h, sockfd);
+	protocol_packet_send(protocol_packet(h), sockfd);
 
 	return -1;
 }

@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 
 	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
-	protocol_send_handshake(kernel_fd);
+	protocol_handshake_send(kernel_fd);
 	puts("Conectado.");
 
 	/* Descomentar cuando la Memoria este preparada para recibir CPUs

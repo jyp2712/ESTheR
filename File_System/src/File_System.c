@@ -13,8 +13,8 @@ int main(int argc, char **argv) {
 
 	socket_t kernel_fd = socket_listen(file_system->puerto);
 
-	header_t header = protocol_header_receive(kernel_fd);
-	guard(header.opcode == OP_HANDSHAKE && header.syspid == KERNEL, "Unexpected handshake");
+	process_t ptype = protocol_handshake_receive(kernel_fd);
+	guard(ptype == KERNEL, "Unexpected handshake");
 	puts("Recibido handshake del Kernel");
 
 	char message[BUFFER_CAPACITY];

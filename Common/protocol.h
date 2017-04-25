@@ -47,10 +47,10 @@ void protocol_packet_send(packet_t packet, socket_t sockfd);
 
 /**
  * Recibe un paquete de un determinado socket.
- * @param packet Paquete.
  * @param sockfd Descriptor del socket.
+ * @return Paquete.
  */
-void protocol_packet_receive(packet_t *packet, socket_t sockfd);
+packet_t protocol_packet_receive(socket_t sockfd);
 
 /**
  * Hace un handshake con un determinado socket.

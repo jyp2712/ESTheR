@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
 	puts("Conectándose al Kernel...");
 	int kernel_fd = socket_connect(consola->ip_kernel, consola->puerto_kernel);
-	protocol_send_handshake(kernel_fd);
+	protocol_handshake_send(kernel_fd);
 	puts("Conectado. Escriba 'help' para ver la lista de comandos disponibles.");
 
 //------------Envio de mensajes al servidor------------
