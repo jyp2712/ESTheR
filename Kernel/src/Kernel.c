@@ -2,6 +2,8 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
 #include "utils.h"
 #include "socket.h"
 #include "protocol.h"
@@ -77,6 +79,8 @@ int main(int argc, char **argv) {
 	protocol_send_handshake(fs_fd);
 	puts("Conectado al File System.");
 
+	gestion_datos_pcb ();
+
 	init_server(kernel->puerto_prog, memoria_fd, fs_fd);
 
 	free(kernel);
@@ -123,60 +127,95 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		printf("----------------------------------------------\n");
 }
 
-t_pcb* crear_pcb_proceso (socket_t cli_sock, char* buffer){
+t_pcb* crear_pcb_proceso (t_metadata_program* program){
 	t_pcb* element = (t_pcb*) malloc (sizeof(t_pcb));
-	int j =0;
-	unsigned int i, k;
 
-	element->idProcess = cli_sock;
-	element->PC = 0;
+	if (element==NULL){
+			perror("Problemas reservando memoria");
+			exit (1);
+		}
+
+	element->idProcess = 0;
+	element->PC = program->instruccion_inicio;
 	element->status = NEW;
-	element->priority = 0;
-	element->pagesCode = 1;
-	element->indexCode = (t_intructions*) malloc (PROGRAM_LINES*sizeof(t_intructions));
+	element->pagesCode=0;
+	element->instructions = program->instrucciones_size;
+	element->indexCode = (t_intructions*) malloc (program->instrucciones_size*sizeof(t_intructions));
 
 	if (element->indexCode==NULL){
 		perror("Problemas reservando memoria");
 		exit (1);
 	}
+	element->indexCode = program->instrucciones_serializado;
 
-	char *buff = (char*) malloc(LINE_SIZE*sizeof(char));
-	if (buff==NULL){
-			perror("Problemas reservando memoria");
-			exit (1);
-		}
 
-	for (i=0;i<strlen(buffer);i++){
-		k = i;
-		while (buffer[k]!='\n'){
-			k++;
-		}
+	element->indexTag = (t_programTag*) malloc ((program->cantidad_de_etiquetas+program->cantidad_de_funciones)*sizeof(t_programTag));
 
-		memset(buff, '\0', k);
-		strncpy(buff, buffer+i, k-i);
-
-		if (buff[i] != '#' && i!=k && strcmp(buff,"begin") != 0 && strcmp(buff,"end") != 0){
-			element->indexCode[j].start=i++;
-			element->indexCode[j].offset=k;
-			j++;
-			i=k;
-		}else{
-			if (strcmp(buff,"end") == 0){
-				i=strlen(buffer);
-			}else{
-				i=k;
-			}
-		}
+	if (element->indexTag==NULL){
+		perror("Problemas reservando memoria");
+		exit (1);
 	}
 
-	element->indexTag.program = 't'; //Ver las etiquetas posibles
+	for (int i=0;i<(program->cantidad_de_etiquetas+program->cantidad_de_funciones);i++){
+		element->indexTag[i].program = (char*) malloc(program->etiquetas_size*sizeof(char));
+	 }
 
-	element->indexTag.PC = element->PC++;
+
+	char* buff = (char*) malloc(program->etiquetas_size*sizeof(char));
+	int j =0;
+	unsigned int i,k;
+	for (i=0;i<program->etiquetas_size;i=i+2){
+		k = i;
+		while (program->etiquetas[k]!='\0'){
+		k++;
+		}
+		memset(buff, '\0', k);
+
+		if (i!=k && i!=0){
+			strncpy(buff, program->etiquetas+i-1, k);
+			strcpy(element->indexTag[j].program, buff);
+			element->indexTag[j].PC = metadata_buscar_etiqueta(element->indexTag[j].program, program->etiquetas, program->etiquetas_size);
+			j++;
+		}else{
+			if (i!=k){
+				strncpy(buff, program->etiquetas, k);
+				strcpy(element->indexTag[j].program, buff);
+				element->indexTag[j].PC = metadata_buscar_etiqueta(element->indexTag[j].program, program->etiquetas, program->etiquetas_size);
+				j++;
+			}
+		}
+	i=k;
+	}
+
+
 	element->indexStack = list_create();
-
-	//Falta inicializar los datos del stack que no entiendo dónde inicializarlo
+	element->stackPointer = 0;
 
 	element->exitCode = 0;
 	return element;
 }
 
+void gestion_datos_pcb (){
+
+	const char * buffer ="#!/usr/bin/ansisop\n\nfunction imprimir\n    wait mutexA\n        print $0+1\n    signal mutexB\nend\n\nbegin\nvariables f,  A,  g\n    A = 	0\n    !Global = 1+A\n    print !Global\n    jnz !Global Siguiente \n:Proximo\n	\n    f = 8	  \n    g <- doble !Global	\n    io impresora 20\n	:Siguiente	\n  imprimir A\n    textPrint    Hola Mundo!\n    \n    sumar1 &g	\n	    print 		g    \n    \n    sinParam\n    \nend\n\nfunction sinParam\n	textPrint Bye\nend\n\n#Devolver el doble del\n#primer parametro\nfunction doble\nvariables f\n    f = $0 + $0\n    return f\nend\n\nfunction sumar1\n	*$0 = 1 + *$0\nend\n";
+	t_metadata_program* dataProgram = metadata_desde_literal(buffer);
+
+	t_pcb* pcb = crear_pcb_proceso (dataProgram);
+
+	printf("PID: %d\n", pcb->idProcess);
+	printf("PC: %d\n", pcb->PC);
+	printf("Status: %d\n", pcb->status);
+	printf("Paginas de codigo: %d\n", pcb->pagesCode);
+	printf("Cantidad de instrucciones: %d\n", pcb->instructions);
+	for (int i =0; i < pcb->instructions;i++){
+		printf("Comienzo linea de codigo: %d\n", pcb->indexCode[i].start);
+		printf("Fin linea de codigo: %d\n", pcb->indexCode[i].offset);
+	}
+	for (int i=0;i<(dataProgram->cantidad_de_etiquetas+dataProgram->cantidad_de_funciones);i++){
+		printf("Etiqueta: %s\n", pcb->indexTag[i].program);
+		printf("Puntero de etiqueta: %d\n", pcb->indexTag[i].PC);
+	}
+
+	metadata_destruir(dataProgram);
+
+}

@@ -19,8 +19,8 @@ typedef struct{
 }t_indexCode;
 
 typedef struct{
-	char program;
-	int PC;
+	char* program;
+	t_puntero_instruccion  PC;
 }t_programTag;
 
 // Variable AnSISOP
@@ -43,10 +43,10 @@ typedef struct {
 	int idProcess;				// ID del programa
 	int PC;						// Contador del programa
 	int status;					// Estado del programa
-	int priority;				// Prioridad??? (yo la sacaría)
 	int pagesCode;				// Cantidad de páginas de memoria que ocupa el código
 	t_instruction* indexCode;	// Conjunto de instrucciones del programa
-	t_programTag indexTag;		// (Esto todavía no entiendo bien qué es) <-- alguien que lo entienda que reemplace este comentario
+	int instructions;			// Cantidad de instrucciones del programa
+	t_programTag* indexTag;		// (Esto todavía no entiendo bien qué es) <-- alguien que lo entienda que reemplace este comentario
 	t_list* indexStack;			// Lista con los elementos de la pila de usuario del programa.
 	int stackPointer;			// Offset del stack
 	int exitCode;				// Código de retorno del programa.

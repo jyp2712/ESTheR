@@ -10,6 +10,8 @@
 #include <semaphore.h>
 #include "socket.h"
 #include "structures.h"
+#include <parser/parser.h>
+#include <parser/metadata_program.h>
 
 #define PACKAGESIZE 1024
 #define CANT_SEM 3
@@ -34,6 +36,8 @@ typedef struct{
 
 void leerConfiguracionKernel(t_kernel*, char* path);
 
-t_pcb* crear_pcb_proceso (socket_t, char*);
+t_pcb* crear_pcb_proceso (t_metadata_program*);
+
+void gestion_datos_pcb ();
 
 #endif /* KERNEL_H_ */
