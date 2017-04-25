@@ -1,166 +1,149 @@
 #include "Memoria.h"
 #include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
+#include <signal.h>
 #include <commons/config.h>
+#include <commons/collections/list.h>
+#include <pthread.h>
 #include "utils.h"
 #include "socket.h"
 #include "protocol.h"
+#include "Configuracion.h"
 
-#define SHMSZ 1
+#define CANT_CLIENTES 100
 
-int shmid;
-key_t key = 5678;
+pthread_t thServidor;
+socket_t skServidor;
+
+int finServidor = 0;
 
 int main(int argc, char **argv) {
-	char *shm;
     set_current_process(MEMORY);
 
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
 	t_memoria* config = malloc(sizeof(t_memoria));
 	leerConfiguracion(config, argv[1]);
+	//leerConfiguracion(config, "metadata");
 
 	//inicializar memoria
 	inicializar(config);
 
-	pid_t id = fork();
+	//crear servidor
+	guard(pthread_create(&thServidor, NULL, crearServidor, config) == 0, "No se pudo crear hilo del servidor");
 
-	if(id > 0) {
-		//crear servidor
-		if((shmid = shmget(key, SHMSZ, IPC_CREAT | 0666)) < 0)//, "No se pudo crear el id para la memoria compartida");
-	    perror("servidor");
-		if((shm = shmat(shmid, NULL, 0)) == (char *) -1)//, "No se pudo adjuntar el id a la memoria");
-		perror("servidor");
-		*shm = 'N';
-		crearServidor(config, shm);
-	}
-	else if(id == 0) {
-		//interprete de comandos
-	    if((shmid = shmget(key, SHMSZ, 0666)) < 0)//, "No se pudo acceder el id para la memoria compartida");
-	    perror("servidor");
-	    if((shm = shmat(shmid, NULL, 0)) == (char *) -1)//, "No se pudo adjuntar el id a la memoria");
-	    perror("servidor");
-		interpreteDeComandos(config, shm);
-	}
-	else {
-		exit(EXIT_FAILURE);
-	}
+	//crear interprete
+	interpreteDeComandos(config);
 
 	//liberar memoria
-
 	free(config);
 
 	return 0;
 }
 
-void leerConfiguracion(t_memoria* config, char* path){
-	t_config* c = config_create(path);
 
-	config->puerto = config_get_string_value(c, "PUERTO");
-	config->marcos = config_get_int_value(c, "MARCOS");
-	config->marco_size = config_get_int_value(c, "MARCO_SIZE");
-	config->entradas_cache = config_get_int_value(c, "ENTRADAS_CACHE");
-	config->cache_x_proc = config_get_int_value(c, "CACHE_X_PROC");
-	config->reemplazo_cache = config_get_string_value(c, "REEMPLAZO_CACHE");
-	config->retardo_memoria = config_get_int_value(c, "RETARDO_MEMORIA");
-
-	printf("---------------Mi configuración---------------\n");
-	printf("PUERTO: %s\n", config->puerto);
-	printf("MARCOS: %i\n", config->marcos);
-	printf("MARCO_SIZE: %i\n", config->marco_size);
-	printf("ENTRADAS_CACHE: %i\n", config->entradas_cache);
-	printf("CACHE_X_PROC: %i\n", config->cache_x_proc);
-	printf("REEMPLAZO_CACHE: %s\n", config->reemplazo_cache);
-	printf("RETARDO_MEMORIA: %i\n", config->retardo_memoria);
-	printf("----------------------------------------------\n");
-}
 
 void inicializar(t_memoria* config){
 
 }
 
-void crearServidor(t_memoria* config, char *shm){
-	struct timeval tv;
-	int finServer = 0;
-	fd_set master;
-	fd_set read_fds;
-	int fdmax;
-	int i;
+void *atenderSenial(int sig, siginfo_t *info, void *ucontext)
+{
+	finServidor = 1;
+	return NULL;
+}
 
-	tv.tv_sec = 4; //segundos
-	tv.tv_usec = 500000; //microsegundos
+void *crearServidor(t_memoria* config){
+	pthread_t thClientes[CANT_CLIENTES];
+	int thClientesIndice = 0;
 
-	socket_t memoria_fd = socket_init(NULL, config->puerto);
+	struct sigaction sa;
+	sa.sa_handler = NULL;
+	sa.sa_sigaction = atenderSenial;
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
 
-	// add the listener to the master set
-	FD_SET(memoria_fd, &master);
-	// keep track of the biggest file descriptor
-	fdmax = memoria_fd;
+	guard(sigaction(SIGUSR1, &sa, NULL) == 0, "No se pudo crear la señal");
 
-	while(!finServer) {
-		read_fds = master; // copy it
-		if (select(fdmax+1, &read_fds, NULL, NULL, &tv) == -1) {
-			//if (errno == EINTR) {
-				// some signal just interrupted us, so restart
-			//}
-			guard(false, strerror(errno));
+	socket_t skServidor = socket_init(NULL, config->puerto);
+	//socket clientes en una lista o array dinamico
+	while(!finServidor) {
+		socket_t cli_sock = socket_accept_v2(skServidor);
+
+		if(cli_sock != -1) {
+			//crear thread hijo
+			if(pthread_create(&thClientes[thClientesIndice++], NULL, procesarCliente, &cli_sock)){
+				printf("No se pudo crear hilo del cliente");
+			}
+			//considerar que si no se acepta un cliente cerrar la conexión
 		}
-		// run through the existing connections looking for data to read
-		for(i = 0; i <= fdmax; i++) {
-			if (FD_ISSET(i, &read_fds)) { // we got one!!
-				if (i == memoria_fd) {
-					// handle new connections
-					socket_t cli_sock = socket_accept_v2(memoria_fd);
-					if(cli_sock != -1) {
-						FD_SET(cli_sock, &master); // add to master set
-						if (cli_sock > fdmax) {    // keep track of the max
-							fdmax = cli_sock;
-						}
-					}
-				}
-				else {
-					// handle data from a client
-					header_t header;
-					if(protocol_receive_header(i, &header) <= 0) {
-						close(i);
-						FD_CLR(i, &master); // remove from master set
-					}
-					else {
-						// we got some data from a client
-						if(validarHandshake(i, &header) == -1) {
-							continue;
-						}
-						procesarMensaje(i);
-					}
-				} // END handle data from client
-			} // END got new incoming connection
-		} // END looping through file descriptors
-		if(*shm == 'F') finServer = 1;
+		if(thClientesIndice >= CANT_CLIENTES) {
+			printf("Te sarpaste en conexiones\n");
+			return NULL;
+		}
+	}
+	//hacer join de los threads hijos
+	int i;
+	for(i = 0; i < thClientesIndice; i++)
+	{
+		pthread_kill(thClientes[i], SIGUSR1);
+		pthread_join(thClientes[i], NULL);
 	}
 
-	socket_close(memoria_fd);
+	return NULL;
+}
+
+void *procesarCliente(socket_t *sockfd) {
+	header_t header;
+	if(validarHandshake(*sockfd, &header) == -1) {
+		quitarConexion(*sockfd, "No valida Handshake");
+		return NULL;
+	}
+
+	while(1) {
+		// handle data from a client
+		if(protocol_receive_header(*sockfd, &header) <= 0) {
+			quitarConexion(*sockfd, "Ocurrió un error o se cerró la conexión desde el cliente");
+			return NULL;
+		}
+
+		switch(header.opcode){
+		case 1:
+			break;
+		default:
+			quitarConexion(*sockfd, "Operación inválida");
+			return NULL;
+		}
+	}
+
+	return NULL;
+}
+
+void quitarConexion(socket_t sockfd, char *msg) {
+	log_inform(msg);
+	close(sockfd);
+	log_inform("Se cerró la conexión %d", sockfd);
 }
 
 int validarHandshake(socket_t sockfd, header_t *header) {
+	header_t h;
 	if((header->syspid == KERNEL && header->opcode == OP_HANDSHAKE)
 			|| (header->syspid == CPU && header->opcode == OP_HANDSHAKE)) {
-		//TODO responder por handshake ok
+		h.syspid = 0;
+		h.opcode = 0;
+		h.msgsize = 0;
+		protocol_header_send(h, sockfd);
+
 		return 0;
 	}
-	//TODO responder por handshake invalido
-	log_inform("Invalid Handshake");
+	h.syspid = 0;
+	h.opcode = 1;
+	h.msgsize = 0;
+	protocol_header_send(h, sockfd);
+
 	return -1;
 }
 
-void procesarMensaje(socket_t sockfd) {
-
-	printf("debería procesar el mensaje continuando su lectura de datos\n");
-}
-
-void interpreteDeComandos(t_memoria* config, char *shm){
+void interpreteDeComandos(t_memoria* config){
 	int finConsola = 0;
 	char comando[80];
 
@@ -176,13 +159,15 @@ void interpreteDeComandos(t_memoria* config, char *shm){
 		}
 		else if(strcmp(comando, "fin") == 0) {
 			//terminar servidor
+			pthread_kill(thServidor, SIGUSR1);
+
+			pthread_join(thServidor, NULL);
 			finConsola = 1;
-			*shm = 'F';
+
 			printf("Proceso Memoria finalizado con éxito\n");
 		}
 		else if(strcmp(comando, "dump") == 0) {
 			printf("Dump...\n");
 		}
 	} while(!finConsola);
-	exit(EXIT_SUCCESS);
 }
