@@ -9,6 +9,7 @@
 #define MEMORIA_H_
 
 #include "protocol.h"
+#include <signal.h>
 
 typedef struct{
 	char* puerto;
@@ -20,16 +21,18 @@ typedef struct{
 	int retardo_memoria;
 }t_memoria;
 
-void leerConfiguracion(t_memoria* config, char* path);
-
 void inicializar(t_memoria* config);
 
-void crearServidor(t_memoria* config, char *shm);
+void *atenderSenial(int sig, siginfo_t *info, void *ucontext);
+
+void *crearServidor(t_memoria* config);
+
+void *procesarCliente(socket_t *sockfd);
 
 int validarHandshake(socket_t sockfd, header_t *header);
 
 void procesarMensaje(socket_t sockfd);
 
-void interpreteDeComandos(t_memoria* config, char *shm);
+void interpreteDeComandos(t_memoria* config);
 
 #endif /* MEMORIA_H_ */
