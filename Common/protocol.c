@@ -3,7 +3,7 @@
 #include "log.h"
 #include <stdarg.h>
 
-#define HEADER_SIZE 6
+#define HEADER_SIZE 7
 
 header_t protocol_header(unsigned char opcode) {
 	header_t header;
@@ -15,7 +15,7 @@ header_t protocol_header(unsigned char opcode) {
 
 static void send_header(header_t header, socket_t sockfd) {
 	unsigned char buffer[HEADER_SIZE];
-	size_t size = serial_pack(buffer, "CCL", header.syspid, header.opcode, header.msgsize);
+	size_t size = serial_pack(buffer, "CCCL", header.syspid, header.usrpid, header.opcode, header.msgsize);
 	socket_send_bytes(buffer, size, sockfd);
 }
 
@@ -25,7 +25,7 @@ static header_t receive_header(socket_t sockfd) {
 	memset(&header, 0, sizeof header);
 
 	if(socket_receive_bytes(buffer, HEADER_SIZE, sockfd) > 0) {
-		serial_unpack(buffer, "CCL", &header.syspid, &header.opcode, &header.msgsize);
+		serial_unpack(buffer, "CCCL", &header.syspid, &header.usrpid, &header.opcode, &header.msgsize);
 	}
 
 	return header;
