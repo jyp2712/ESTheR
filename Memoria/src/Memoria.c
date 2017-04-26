@@ -95,7 +95,7 @@ void *crearServidor(t_memoria* config){
 }
 
 void *procesarCliente(void *arg) {
-	socket_t sockfd = (socket_t)arg;
+	socket_t sockfd = *(socket_t*)arg;
 	process_t ptype = protocol_handshake_receive(sockfd);
 
 	if(ptype == KERNEL){
