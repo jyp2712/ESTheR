@@ -28,22 +28,23 @@ int main(int argc, char **argv) {
 	protocol_handshake_send(kernel_fd);
 	puts("Conectado.");
 
-	/* Descomentar cuando la Memoria este preparada para recibir CPUs
+
+	// Descomentar cuando la Memoria este preparada para recibir CPUs
 	puts("Conectándose a la Memoria...");
 	int memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
-	protocol_send_handshake(memoria_fd);
+	protocol_handshake_send(memoria_fd);
 	puts("Conectado.");
-	*/
+
 
 	//Espero un mensaje del Kernel
 	char message[BUFFER_CAPACITY];
-	while(socket_receive_string(message, kernel_fd) > 0) {
+	while(socket_receive_string(message, memoria_fd) > 0) {
 		ejecutarPrograma();
 	}
 
 	free(cpu);
 	socket_close(kernel_fd);
-	// socket_close(memoria_fd);
+	socket_close(memoria_fd);
 	return 0;
 
 }
