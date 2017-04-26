@@ -27,11 +27,9 @@ void *atenderSenial(int sig, siginfo_t *info, void *ucontext);
 
 void *crearServidor(t_memoria* config);
 
-void *procesarCliente(socket_t *sockfd);
+void *procesarCliente(void *arg);
 
-int validarHandshake(socket_t sockfd, header_t *header);
-
-void procesarMensaje(socket_t sockfd);
+void quitarConexion(socket_t sockfd, char *msg);
 
 void interpreteDeComandos(t_memoria* config);
 

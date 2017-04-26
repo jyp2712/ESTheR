@@ -6,6 +6,11 @@
 
 #define OP_UNDEFINED 0
 #define OP_HANDSHAKE 1
+#define OP_ME_INIPRO 2
+#define OP_ME_SOLBYTPAG 3
+#define OP_ME_ALMBYTPAG 4
+#define OP_ME_ASIPAGPRO 5
+#define OP_ME_FINPRO 6
 
 typedef struct {
 	unsigned char syspid;	// ID del proceso de sistema emisor del paquete
@@ -19,6 +24,11 @@ typedef struct {
 	header_t header;
 	unsigned char *payload;
 } packet_t;
+
+typedef struct {
+	unsigned char usrpid;
+	unsigned int pagreq;
+} me_progpag_t;
 
 /**
  * Crea el encabezado de un paquete para una enviar una operación.

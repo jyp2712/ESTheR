@@ -4,6 +4,7 @@
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <pthread.h>
+#include "log.h"
 #include "utils.h"
 #include "socket.h"
 #include "protocol.h"
@@ -15,6 +16,7 @@ pthread_t thServidor;
 socket_t skServidor;
 
 int finServidor = 0;
+int kernelConectado = 0;
 
 int main(int argc, char **argv) {
     set_current_process(MEMORY);
@@ -62,7 +64,7 @@ void *crearServidor(t_memoria* config){
 	sa.sa_flags = SA_SIGINFO;
 	sigemptyset(&sa.sa_mask);
 
-	guard(sigaction(SIGUSR1, &sa, NULL) == 0, "No se pudo crear la señal");
+	guard(sigaction(SIGUSR1, &sa, NULL) == 0, "Can't create signal user");
 
 	socket_t skServidor = socket_init(NULL, config->puerto);
 	//socket clientes en una lista o array dinamico
@@ -72,7 +74,7 @@ void *crearServidor(t_memoria* config){
 		if(cli_sock != -1) {
 			//crear thread hijo
 			if(pthread_create(&thClientes[thClientesIndice++], NULL, procesarCliente, &cli_sock)){
-				printf("No se pudo crear hilo del cliente");
+				log_report("Can't create child thread for client connection");
 			}
 			//considerar que si no se acepta un cliente cerrar la conexión
 		}
@@ -92,26 +94,40 @@ void *crearServidor(t_memoria* config){
 	return NULL;
 }
 
-void *procesarCliente(socket_t *sockfd) {
-	header_t header;
-	if(validarHandshake(*sockfd, &header) == -1) {
-		quitarConexion(*sockfd, "No valida Handshake");
-		return NULL;
+void *procesarCliente(void *arg) {
+	socket_t sockfd = (socket_t)arg;
+	process_t ptype = protocol_handshake_receive(sockfd);
+
+	if(ptype == KERNEL){
+		if(kernelConectado){
+			quitarConexion(sockfd, "Kernel already connected");
+			return NULL;
+		}
+		else {
+			kernelConectado = 1;
+		}
 	}
 
 	while(1) {
-		// handle data from a client
-		packet_t packet = protocol_packet_receive(*sockfd);
+		packet_t packet = protocol_packet_receive(sockfd);
 		if(packet.header.opcode == OP_UNDEFINED) {
-			quitarConexion(*sockfd, "Ocurrió un error o se cerró la conexión desde el cliente");
+			quitarConexion(sockfd, "Error on client connection");
 			return NULL;
 		}
 
-		switch(header.opcode){
-		case 1:
+		switch(packet.header.opcode){
+		case OP_ME_INIPRO:
+			break;
+		case OP_ME_SOLBYTPAG:
+			break;
+		case OP_ME_ALMBYTPAG:
+			break;
+		case OP_ME_ASIPAGPRO:
+			break;
+		case OP_ME_FINPRO:
 			break;
 		default:
-			quitarConexion(*sockfd, "Operación inválida");
+			quitarConexion(sockfd, "Invalid operation");
 			return NULL;
 		}
 	}
@@ -122,26 +138,7 @@ void *procesarCliente(socket_t *sockfd) {
 void quitarConexion(socket_t sockfd, char *msg) {
 	log_inform(msg);
 	close(sockfd);
-	log_inform("Se cerró la conexión %d", sockfd);
-}
-
-int validarHandshake(socket_t sockfd, header_t *header) {
-	header_t h;
-	if((header->syspid == KERNEL && header->opcode == OP_HANDSHAKE)
-			|| (header->syspid == CPU && header->opcode == OP_HANDSHAKE)) {
-		h.syspid = 0;
-		h.opcode = 0;
-		h.msgsize = 0;
-		protocol_packet_send(protocol_packet(h), sockfd);
-
-		return 0;
-	}
-	h.syspid = 0;
-	h.opcode = 1;
-	h.msgsize = 0;
-	protocol_packet_send(protocol_packet(h), sockfd);
-
-	return -1;
+	log_inform("The socket %d has closed", sockfd);
 }
 
 void interpreteDeComandos(t_memoria* config){
