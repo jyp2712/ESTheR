@@ -10,6 +10,8 @@
 // Por ahí podríamos ponerlo en el archivo de configuración
 #define MAX_THREADS 10
 
+
+
 thread_t threads[MAX_THREADS];
 unsigned nthread = 0;
 
@@ -53,6 +55,19 @@ void run_program(const char *path) {
 	threads[nthread++] = thread;
 }
 
+void  iniciarPrograma(t_parametrosHilo * pamHilos){
+	//t_parametrosHilo * arg;
+	//arg = (t_parametrosHilo *) &pamHilos;
+	printf("%d\n",pamHilos->kernel_fd);
+	printf("%s\n",pamHilos->path);
+
+	readfile((const char*)pamHilos->path,pamHilos->buffer);
+	socket_send_string(pamHilos->buffer, pamHilos->kernel_fd);
+	//return (void *)arg;//para que no tire warning
+
+}
+
+
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(CONSOLE);
@@ -79,8 +94,14 @@ int main(int argc, char **argv) {
 			const char *path = command + 4;
 
 			char buffer[BUFFER_CAPACITY];
-			readfile(path, buffer);
-			socket_send_string(buffer, kernel_fd);
+			t_parametrosHilo * pamHilos = malloc(sizeof(t_parametrosHilo));
+			pamHilos->buffer=buffer;
+			pamHilos->kernel_fd=kernel_fd;
+			pamHilos->path = string_duplicate((char*)path);
+			printf("%s", pamHilos->path);
+			thread_t thread;
+			thread = thread_create((void*)iniciarPrograma,(void *)pamHilos);
+
 //			run_program(path);
 		}
 	}
@@ -101,4 +122,5 @@ void leerConfiguracionConsola(t_consola *consola, char *path) {
 	printf("PUERTO KERNEL: %s\n", consola->puerto_kernel);
 	printf("----------------------------------------------\n");
 }
+
 
