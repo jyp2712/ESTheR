@@ -3,7 +3,7 @@
 #include "log.h"
 #include <stdarg.h>
 
-#define HEADER_SIZE 8
+#define HEADER_SIZE 6
 
 header_t protocol_header(unsigned char opcode) {
 	header_t header;
