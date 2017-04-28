@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "socket.h"
 #include "protocol.h"
+#include "serial.h"
 #include "log.h"
 #include <commons/collections/list.h>
 #include "structures.h"
@@ -35,6 +36,13 @@ int main(int argc, char **argv) {
 	protocol_handshake_send(memoria_fd);
 	puts("Conectado.");
 
+
+	//Recibo PCB del Kernel
+	t_pcb * pcb = alloc(sizeof(t_pcb));
+	packet_t packet_pcb = protocol_packet_receive (kernel_fd);
+	serial_unpack(packet_pcb.payload, "hh", &pcb->idProcess, &pcb->pagesCode);
+	printf("PID: %d\n", pcb->idProcess);
+	printf("Paginas de código: %d\n", pcb->pagesCode);
 
 	//Espero un mensaje del Kernel
 	char message[BUFFER_CAPACITY];

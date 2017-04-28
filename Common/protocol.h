@@ -11,6 +11,7 @@
 #define OP_ME_ALMBYTPAG 4
 #define OP_ME_ASIPAGPRO 5
 #define OP_ME_FINPRO 6
+#define OP_KE_SENDINGDATA 7
 
 typedef struct {
 	unsigned char syspid;	// ID del proceso de sistema emisor del paquete

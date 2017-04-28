@@ -38,6 +38,6 @@ void leerConfiguracionKernel(t_kernel*, char* path);
 
 t_pcb* crear_pcb_proceso (t_metadata_program*);
 
-void gestion_datos_pcb ();
+void gestion_datos_pcb (char*, socket_t, socket_t);
 
 #endif /* KERNEL_H_ */

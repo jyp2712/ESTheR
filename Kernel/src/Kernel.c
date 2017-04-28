@@ -51,11 +51,12 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 					continue;
 				}
 
-				printf("Recibido mensaje: \"%s\"\n", buffer);
-
+				if(i == CONSOLE) {
+					socket_receive_string(buffer, i);
+				}
 				for(socket_t j = 0; j <= all_fds.max; j++) {
 					if(!FD_ISSET(j, &all_fds.set) || j == sv_sock || j == i) continue;
-					socket_send_string(buffer, j);
+					gestion_datos_pcb(buffer,j, mem_fd);
 				}
 			}
 		}
@@ -80,7 +81,6 @@ int main(int argc, char **argv) {
 //	protocol_send_handshake(fs_fd);
 //	puts("Conectado al File System.");
 
-	gestion_datos_pcb();
 
 	init_server(kernel->puerto_prog, memoria_fd, fs_fd);
 
@@ -131,10 +131,10 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 	t_pcb *element = alloc(sizeof(t_pcb));
 
-	element->idProcess = 0;
+	element->idProcess = 25;
 	element->PC = program->instruccion_inicio;
 	element->status = NEW;
-	element->pagesCode = 0;
+	element->pagesCode = 32;
 	element->instructions = program->instrucciones_size;
 	element->indexCode = program->instrucciones_serializado;
 
@@ -162,26 +162,18 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 	return element;
 }
 
-void gestion_datos_pcb() {
-	char buffer[PROGRAM_SIZE];
-	readfile("completo.ansisop", buffer);
+void gestion_datos_pcb(char* buffer, socket_t cli_socket, socket_t server_socket) {
 
 	t_metadata_program* dataProgram = metadata_desde_literal(buffer);
 	t_pcb* pcb = crear_pcb_proceso(dataProgram);
 
-	printf("PID: %d\n", pcb->idProcess);
-	printf("PC: %d\n", pcb->PC);
-	printf("Status: %d\n", pcb->status);
-	printf("Paginas de codigo: %d\n", pcb->pagesCode);
-	printf("Cantidad de instrucciones: %d\n", pcb->instructions);
-	for (int i =0; i < pcb->instructions;i++){
-		printf("Comienzo linea de codigo: %d\n", pcb->indexCode[i].start);
-		printf("Fin linea de codigo: %d\n", pcb->indexCode[i].offset);
-	}
-	for (int i=0;i<(dataProgram->cantidad_de_etiquetas+dataProgram->cantidad_de_funciones);i++){
-		printf("Etiqueta: %s\n", pcb->indexTag[i].name);
-		printf("Puntero de etiqueta: %d\n", pcb->indexTag[i].PC);
-	}
+	unsigned char buff[BUFFER_CAPACITY];
+	header_t header_pcb = protocol_header (OP_KE_SENDINGDATA);
+	header_pcb.msgsize = serial_pack (buff, "hh", pcb->idProcess, pcb->pagesCode);
+	packet_t packet_pcb = protocol_packet (header_pcb, buff);
+	protocol_packet_send(packet_pcb, cli_socket);
+	protocol_packet_send(packet_pcb, server_socket);
+
 
 	metadata_destruir(dataProgram);
 
