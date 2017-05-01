@@ -5,6 +5,7 @@
 #define BACKLOG 5
 
 #include <parser/parser.h>
+#include "structures.h"
 
 typedef struct{
 	char* ip_kernel;
@@ -13,6 +14,19 @@ typedef struct{
 	char* puerto_memoria;
 }t_cpu;
 
+int tamanioPagina;
+int memoria_fd;
+int kernel_fd;
+t_pcb* pcbActual;
+t_cpu* cpu;
+
+void finalizarCPU();
+t_stack* t_stack_create();
+bool esArgumento(t_nombre_variable identificador_variable);
+char* pedirProximaInstruccionAMemoria();
+void ejecutarPrograma();
+void pedirTamPagAMemoria();
+int recibirMensajesDeKernel();
 void leerConfiguracionCPU(t_cpu* cpu, char* path);
 t_puntero definirVariable(t_nombre_variable identificador_variable);
 t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable);

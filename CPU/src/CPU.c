@@ -6,75 +6,97 @@
 #include "serial.h"
 #include "log.h"
 #include <commons/collections/list.h>
-#include "structures.h"
 #include <ctype.h>
-
-#define tamanioPagina 10
-
-t_stack* t_stack_create();
-bool esArgumento(t_nombre_variable identificador_variable);
-t_pcb* pcbActual;
-void ejecutarPrograma();
 
 int main(int argc, char **argv) {
 
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(CPU);
 
-	t_cpu* cpu = malloc(sizeof(t_cpu));
+	cpu = malloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
 
-	puts("Conectándose al Kernel...");
-	int kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
-	protocol_handshake_send(kernel_fd);
-	puts("Conectado.");
-
-
-	// Descomentar cuando la Memoria este preparada para recibir CPUs
 	puts("Conectándose a la Memoria...");
-	int memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
+	memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
 	protocol_handshake_send(memoria_fd);
 	puts("Conectado.");
 
+	pedirTamPagAMemoria();
 
-	//Recibo PCB del Kernel
-	t_pcb * pcb = alloc(sizeof(t_pcb));
-	packet_t packet_pcb = protocol_packet_receive (kernel_fd);
-	serial_unpack(packet_pcb.payload, "hh", &pcb->idProcess, &pcb->pagesCode);
-	printf("PID: %d\n", pcb->idProcess);
-	printf("Paginas de código: %d\n", pcb->pagesCode);
+	puts("Conectándose al Kernel...");
+	kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
+	protocol_handshake_send(kernel_fd);
+	puts("Conectado.");
 
-	//Espero un mensaje del Kernel
-	char message[BUFFER_CAPACITY];
-	while(socket_receive_string(message, memoria_fd) > 0) {
-		ejecutarPrograma();
+	while(true){
+		log_inform("Esperando nuevo proceso a ejecutar.");
+		if (recibirMensajesDeKernel() == true) {
+		} else {
+			finalizarCPU();
+			return EXIT_SUCCESS;
+		}
 	}
 
-	free(cpu);
-	socket_close(kernel_fd);
-	socket_close(memoria_fd);
-	return 0;
+	finalizarCPU();
+	return EXIT_SUCCESS;
 
 }
 
-void ejecutarPrograma(){
-	// El PCB me lo manda el kernel, yo solo creo el stack
-	pcbActual = malloc(sizeof(t_pcb));
-	pcbActual->indexStack = list_create();
-	pcbActual->stackPointer = 0;
+void finalizarCPU(){
+	free(cpu);
+	socket_close(kernel_fd);
+	socket_close(memoria_fd);
+}
 
-	log_inform("Tamaño de pagina: %i", tamanioPagina);
-	char* instruccion[100];
-	int i;
-	instruccion[0] = "variables a, b, c, d";
-	instruccion[1] = "a = 3";
-	instruccion[2] = "b = 5";
-	instruccion[3] = "c = 7";
-	instruccion[4] = "d = 9";
-	for (i = 0; i <= 4; ++i) {
-		log_inform("La instruccion a parsear es: %s", instruccion[i]);
-		analizadorLinea(instruccion[i], &funcionesAnSISOP, &funcionesKernel);
+void pedirTamPagAMemoria(){
+
+	//Pedir tamPag a memoria y setearlo en var local
+
+	tamanioPagina = 10;
+}
+
+int recibirMensajesDeKernel(){
+
+	packet_t packet = protocol_packet_receive(kernel_fd);
+
+	if(packet.header.opcode == OP_KE_SENDINGDATA){
+
+		pcbActual = alloc(sizeof(t_pcb));
+		serial_unpack(packet.payload, "hh", &pcbActual->idProcess, &pcbActual->pagesCode);
+
+		//Asignar pcb recibido a pcbActual
+
+		ejecutarPrograma();
+
+		return true;
+
 	}
+	else{
+		log_report("Mensaje inválido de Kernel.");
+		return false;
+	}
+}
+
+void ejecutarPrograma(){
+
+	log_inform("El proceso #%d entró en ejecución.", pcbActual->idProcess);
+	int quantum = pcbActual->quantum;
+
+	while(quantum > 0){
+
+		char* proximaInstruccion = pedirProximaInstruccionAMemoria();
+
+		log_inform("Instrucción recibida: %s", proximaInstruccion);
+
+		analizadorLinea(proximaInstruccion, &funcionesAnSISOP, &funcionesKernel);
+
+	}
+}
+
+char* pedirProximaInstruccionAMemoria(){
+
+	return "variables a, b";
+
 }
 
 // Primitivas AnSISOP

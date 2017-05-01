@@ -43,6 +43,7 @@ typedef struct{
 typedef struct {
 	int idProcess;				// ID del programa
 	int PC;						// Contador del programa
+	int quantum;
 	int status;					// Estado del programa
 	int pagesCode;				// Cantidad de páginas de memoria que ocupa el código
 	t_instruction* indexCode;	// Conjunto de instrucciones del programa
