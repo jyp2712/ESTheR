@@ -85,31 +85,19 @@ socket_t socket_init(const char *ip, const char *port) {
 	return sockfd;
 }
 
-socket_t socket_accept_v2(socket_t sv_sock) {
-	struct sockaddr rem_addr;
-	socklen_t addr_size = sizeof rem_addr;
-
-	socket_t cli_sock = accept(sv_sock, &rem_addr, &addr_size);
-
-	if (cli_sock == -1) {
-		log_report(strerror(errno));
-	}
-
-	return cli_sock;
-}
-
 socket_t socket_accept(socket_t sv_sock) {
 	struct sockaddr rem_addr;
 	socklen_t addr_size = sizeof rem_addr;
 
 	socket_t cli_sock = accept(sv_sock, &rem_addr, &addr_size);
-	fdcheck(cli_sock);
 
-	struct sockaddr_in *addr_in = (struct sockaddr_in*) &rem_addr;
-	char remote_ip[INET_ADDRSTRLEN];
+	if(cli_sock != -1) {
+		struct sockaddr_in *addr_in = (struct sockaddr_in*) &rem_addr;
+		char remote_ip[INET_ADDRSTRLEN];
 
-	inet_ntop(AF_INET, &addr_in->sin_addr, remote_ip, INET_ADDRSTRLEN);
-	log_inform("Client %s connected on socket %d", remote_ip, cli_sock);
+		inet_ntop(AF_INET, &addr_in->sin_addr, remote_ip, INET_ADDRSTRLEN);
+		log_inform("Client %s connected on socket %d", remote_ip, cli_sock);
+	}
 
 	return cli_sock;
 }
@@ -154,12 +142,12 @@ size_t socket_send_bytes(const unsigned char *message, size_t size, socket_t soc
 	return bytes_sent;
 }
 
-static size_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
+static ssize_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
 	size_t bytes_received = 0;
 
 	while(bytes_received < len) {
 		ssize_t n = recv(sockfd, buf + bytes_received, len - bytes_received, 0);
-		fdcheck(n);
+		if(n == -1) return n;
 		if(n == 0) {
 			log_report("Connection dropped on socket %d", sockfd);
 			return 0;
@@ -173,8 +161,8 @@ static size_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
 	return bytes_received;
 }
 
-size_t socket_receive_string(char *message, socket_t sockfd) {
-	size_t bytes_received = recvall(sockfd, (unsigned char *) message, BUFFER_CAPACITY);
+ssize_t socket_receive_string(char *message, socket_t sockfd) {
+	ssize_t bytes_received = recvall(sockfd, (unsigned char *) message, BUFFER_CAPACITY);
 	if(bytes_received > 0) {
 		log_inform("Received string: \"%s\"", message);
 	}
@@ -182,8 +170,8 @@ size_t socket_receive_string(char *message, socket_t sockfd) {
 	return bytes_received;
 }
 
-size_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd) {
-	size_t bytes_received = recvall(sockfd, message, size);
+ssize_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd) {
+	ssize_t bytes_received = recvall(sockfd, message, size);
 	if(bytes_received > 0) {
 		log_inform("Received %ld bytes", bytes_received);
 	}
@@ -206,6 +194,7 @@ void socket_set_add(socket_t fd, fdset_t *fds) {
 }
 
 void socket_close(socket_t sockfd) {
+	shutdown(sockfd, SHUT_RDWR);
 	fdcheck(close(sockfd));
 	log_inform("Socket %d closed", sockfd);
 }

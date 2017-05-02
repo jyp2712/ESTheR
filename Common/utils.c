@@ -5,7 +5,7 @@
 
 void quit(const char *err) {
 	if(err != NULL) {
-		printf("%s\n", err);
+		printf("\n%s\n", err);
 		exit(EXIT_FAILURE);
 	}
 	exit(EXIT_SUCCESS);
@@ -33,18 +33,18 @@ void input(char *buffer) {
 	buffer[strcspn(buffer, "\n")] = '\0';
 }
 
-bool readfile(const char *path, char *buffer) {
-	if(!string_starts_with(path, "/")) {
-		char *rpath = string_duplicate(get_resource_path());
+ssize_t readfile(const char *path, char *buffer) {
+	if(!string_starts_with((char *) path, "/")) {
+		char *rpath = string_duplicate((char *) get_resource_path());
 		string_append(&rpath, "scripts/");
-		string_append(&rpath, path);
+		string_append(&rpath, (char *) path);
 		path = rpath;
 	}
 
 	FILE *file = fopen(path, "rb");
 	if(file == NULL) {
 		log_report("Couldn't open resource at %s", path);
-		return false;
+		return -1;
 	}
 
 	fseek(file, 0, SEEK_END);
@@ -52,10 +52,10 @@ bool readfile(const char *path, char *buffer) {
 	fseek(file, 0, SEEK_SET);
 	fread(buffer, fsize, 1, file);
 
-	bool ret = ferror(file) == 0;
+	bool ok = ferror(file) == 0;
 	fclose(file);
 	buffer[fsize] = '\0';
-	return ret;
+	return ok ? fsize : -1;
 }
 
 bool streq(const char *str1, const char *str2) {
@@ -81,4 +81,8 @@ void *alloc(size_t size) {
 	void *p = calloc(1, size);
 	guard(p != NULL, "Problemas reservando memoria");
 	return p;
+}
+
+void title(const char *text) {
+	printf("\n\33[1m\33[4m\33[33m%s\33[0m\n", text);
 }

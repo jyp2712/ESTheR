@@ -18,7 +18,7 @@ void leerConfiguracion(t_memoria* config, char* path){
 	config->reemplazo_cache = config_get_string_value(c, "REEMPLAZO_CACHE");
 	config->retardo_memoria = config_get_int_value(c, "RETARDO_MEMORIA");
 
-	printf("---------------Mi configuración---------------\n");
+	title("Configuración");
 	printf("PUERTO: %s\n", config->puerto);
 	printf("MARCOS: %i\n", config->marcos);
 	printf("MARCO_SIZE: %i\n", config->marco_size);
@@ -26,5 +26,4 @@ void leerConfiguracion(t_memoria* config, char* path){
 	printf("CACHE_X_PROC: %i\n", config->cache_x_proc);
 	printf("REEMPLAZO_CACHE: %s\n", config->reemplazo_cache);
 	printf("RETARDO_MEMORIA: %i\n", config->retardo_memoria);
-	printf("----------------------------------------------\n");
 }

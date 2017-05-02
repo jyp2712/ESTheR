@@ -44,9 +44,9 @@ void input(char *buffer);
  * archivos se toman del directorio ~/tpsorsc/scripts.
  * @param path Ruta al archivo que se quiere leer.
  * @param buffer Búfer donde se almacenará el contenido del archivo.
- * @return Valor lógico indicando si se pudo leer el archivo.
+ * @return Tamaño del archivo o -1 si hubo error.
  */
-bool readfile(const char *path, char *buffer);
+ssize_t readfile(const char *path, char *buffer);
 
 /**
  * Compara dos cadenas y devuelve un valor lógico indicando si son iguales.
@@ -80,5 +80,11 @@ const char *timediff(time_t t1, time_t t2);
  * @return Puntero al bloque de memoria asignado.
  */
 void *alloc(size_t size);
+
+/**
+ * Imprime un título por pantalla.
+ * @param text Texto del título.
+ */
+void title(const char *text);
 
 #endif /* utils_h */

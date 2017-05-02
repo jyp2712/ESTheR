@@ -1,11 +1,13 @@
 #include "globals.h"
 
 #include <sys/stat.h>
+#include "thread.h"
 
 static process_t current_process;
 
 void set_current_process(process_t spid) {
 	current_process = spid;
+	thread_signal_set(SIGTERM);
 }
 
 process_t get_current_process(void) {

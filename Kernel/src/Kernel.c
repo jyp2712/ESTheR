@@ -9,7 +9,7 @@
 #include "protocol.h"
 #include "serial.h"
 #include "structures.h"
-
+#include "thread.h"
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -63,24 +63,32 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 	}
 }
 
+void terminal() {
+	title("Consola");
+	// TODO
+}
+
 int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(KERNEL);
+	title("KERNEL");
 
 	t_kernel* kernel = malloc(sizeof(t_kernel));
 	leerConfiguracionKernel(kernel, argv[1]);
 	
-	puts("Conectándose a la Memoria...");
+	title("Conexión");
+	printf("Estableciendo conexión con la Memoria...");
 	int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
 	protocol_handshake_send(memoria_fd);
-	puts("Conectado a la Memoria.");
+	printf("\33[2K\rConectado a la Memoria en %s:%s\n", kernel->ip_memoria, kernel->puerto_memoria);
 
 //	Lo comento para que no joda. Total por ahora no lo necesitamos.
-//	puts("Conectándose al File System...");
+//	printf("Estableciendo conexión con el File System...");
 	int fs_fd = 0; // socket_connect(kernel->ip_fs, kernel->puerto_fs);
 //	protocol_send_handshake(fs_fd);
-//	puts("Conectado al File System.");
+//	printf("\33[2K\rConectado al File System en %s:%s\n", kernel->ip_fs, kernel->puerto_fs);
 
+	thread_create(terminal);
 
 	init_server(kernel->puerto_prog, memoria_fd, fs_fd);
 
@@ -112,7 +120,7 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		}
 		kernel->stack_size = config_get_int_value(config, "STACK_SIZE");
 
-		printf("---------------Mi configuración---------------\n");
+		title("Configuración");
 		printf("PUERTO_PROG: %s\n", kernel->puerto_prog);
 		printf("PUERTO_CPU: %s\n", kernel->puerto_cpu);
 		printf("IP_MEMORIA: %s\n", kernel->ip_memoria);
@@ -125,7 +133,6 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		printf("SEM_IDS:[%s, %s ,%s]\n", kernel->sem_ids[0].__size, kernel->sem_ids[1].__size, kernel->sem_ids[2].__size);
 		printf("SEM_INIT:[%d, %d ,%d]\n", kernel->sem_init[0], kernel->sem_init[1], kernel->sem_init[2]);
 		printf("STACK_SIZE: %i\n", kernel->stack_size);
-		printf("----------------------------------------------\n");
 }
 
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {

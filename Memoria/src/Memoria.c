@@ -1,118 +1,87 @@
 #include "Memoria.h"
-#include <unistd.h>
-#include <signal.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
-#include <pthread.h>
 #include "log.h"
 #include "utils.h"
 #include "socket.h"
 #include "protocol.h"
+#include "thread.h"
 #include "Configuracion.h"
 
 #define CANT_CLIENTES 100
 
-pthread_t thServidor;
+t_memoria *config;
+thread_t thServidor;
 socket_t skServidor;
 
-int finServidor = 0;
-int kernelConectado = 0;
+bool kernelConectado = false;
 
 int main(int argc, char **argv) {
     set_current_process(MEMORY);
+    title("MEMORIA");
 
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 
-	t_memoria* config = malloc(sizeof(t_memoria));
+	config = malloc(sizeof(t_memoria));
 	leerConfiguracion(config, argv[1]);
-	//leerConfiguracion(config, "metadata");
 
 	//inicializar memoria
-	inicializar(config);
+	inicializar();
 
-	//crear servidor
-	guard(pthread_create(&thServidor, NULL, crearServidor, config) == 0, "No se pudo crear hilo del servidor");
+	//crear hilo servidor
+	thServidor = thread_create(crearServidor);
 
 	//crear interprete
-	interpreteDeComandos(config);
+	interpreteDeComandos();
 
-	//liberar memoria
-	free(config);
-
-	return 0;
+	//liberar memoria y terminar
+	terminate();
+	return EXIT_SUCCESS;
 }
 
-
-
-void inicializar(t_memoria* config){
+void inicializar(){
 
 }
 
-void *atenderSenial(int sig, siginfo_t *info, void *ucontext)
-{
-	finServidor = 1;
-	return NULL;
-}
-
-void *crearServidor(t_memoria* config){
-	pthread_t thClientes[CANT_CLIENTES];
+void crearServidor(){
+	thread_t thClientes[CANT_CLIENTES];
 	int thClientesIndice = 0;
 
-	struct sigaction sa;
-	sa.sa_handler = NULL;
-	sa.sa_sigaction = atenderSenial;
-	sa.sa_flags = SA_SIGINFO;
-	sigemptyset(&sa.sa_mask);
-
-	guard(sigaction(SIGUSR1, &sa, NULL) == 0, "Can't create signal user");
-
 	socket_t skServidor = socket_init(NULL, config->puerto);
+	socket_t cli_sock;
 	//socket clientes en una lista o array dinamico
-	while(!finServidor) {
-		socket_t cli_sock = socket_accept_v2(skServidor);
+	while((cli_sock = socket_accept(skServidor)) != -1) {
+		//crear thread hijo
+		thClientes[thClientesIndice++] = thread_create(procesarCliente, &cli_sock);
 
-		if(cli_sock != -1) {
-			//crear thread hijo
-			if(pthread_create(&thClientes[thClientesIndice++], NULL, procesarCliente, &cli_sock)){
-				log_report("Can't create child thread for client connection");
-			}
-			//considerar que si no se acepta un cliente cerrar la conexión
-		}
 		if(thClientesIndice >= CANT_CLIENTES) {
-			printf("Te sarpaste en conexiones\n");
-			return NULL;
+			quit("Demasiadas conexiones");
 		}
 	}
-	//hacer join de los threads hijos
-	int i;
-	for(i = 0; i < thClientesIndice; i++)
-	{
-		pthread_kill(thClientes[i], SIGUSR1);
-		pthread_join(thClientes[i], NULL);
-	}
 
-	return NULL;
+//	hacer join de los threads hijos
+	for(int i = 0; i < thClientesIndice; i++) {
+		thread_kill(thClientes[i]);
+	}
 }
 
-void *procesarCliente(void *arg) {
+void procesarCliente(void *arg) {
 	socket_t sockfd = *(socket_t*)arg;
 	process_t ptype = protocol_handshake_receive(sockfd);
 
-	if(ptype == KERNEL){
+	if(ptype == KERNEL) {
 		if(kernelConectado){
 			quitarConexion(sockfd, "Kernel already connected");
-			return NULL;
+			return;
 		}
-		else {
-			kernelConectado = 1;
-		}
+		kernelConectado = true;
 	}
 
-	while(1) {
+	while(true) {
 		packet_t packet = protocol_packet_receive(sockfd);
 		if(packet.header.opcode == OP_UNDEFINED) {
 			quitarConexion(sockfd, "Error on client connection");
-			return NULL;
+			return;
 		}
 
 		switch(packet.header.opcode){
@@ -128,44 +97,40 @@ void *procesarCliente(void *arg) {
 			break;
 		default:
 			quitarConexion(sockfd, "Invalid operation");
-			return NULL;
+			return;
 		}
 	}
-
-	return NULL;
 }
 
 void quitarConexion(socket_t sockfd, char *msg) {
 	log_inform(msg);
-	close(sockfd);
-	log_inform("The socket %d has closed", sockfd);
+	socket_close(sockfd);
 }
 
-void interpreteDeComandos(t_memoria* config){
-	int finConsola = 0;
+void interpreteDeComandos() {
 	char comando[80];
 
-	printf("Escriba ? para ayuda de comandos disponibles\n");
-	do {
-		printf ("Comando: ");
-		scanf ("%s", comando);
+	title("Consola");
+	while(true) {
+		input(comando);
 
-		if(strcmp(comando, "?") == 0) {
+		if(streq(comando, "?")) {
 			printf("Comandos disponibles:\n");
 			printf(" fin\n   Finaliza la terminal\n");
 			printf(" dump\n   Dump de la memoria\n");
-		}
-		else if(strcmp(comando, "fin") == 0) {
-			//terminar servidor
-			pthread_kill(thServidor, SIGUSR1);
-
-			pthread_join(thServidor, NULL);
-			finConsola = 1;
-
-			printf("Proceso Memoria finalizado con éxito\n");
-		}
-		else if(strcmp(comando, "dump") == 0) {
+		} else if(streq(comando, "fin")) {
+			return;
+		} else if(streq(comando, "dump")) {
 			printf("Dump...\n");
+		} else {
+			puts("Comando no reconocido. Escriba '?' para ayuda.");
 		}
-	} while(!finConsola);
+	}
+}
+
+void terminate() {
+	thread_kill(thServidor);
+	socket_close(skServidor);
+	free(config);
+	puts("Proceso Memoria finalizado con éxito");
 }

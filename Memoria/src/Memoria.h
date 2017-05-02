@@ -21,16 +21,16 @@ typedef struct{
 	int retardo_memoria;
 }t_memoria;
 
-void inicializar(t_memoria* config);
+void inicializar(void);
 
-void *atenderSenial(int sig, siginfo_t *info, void *ucontext);
+void crearServidor(void);
 
-void *crearServidor(t_memoria* config);
-
-void *procesarCliente(void *arg);
+void procesarCliente(void *arg);
 
 void quitarConexion(socket_t sockfd, char *msg);
 
-void interpreteDeComandos(t_memoria* config);
+void interpreteDeComandos(void);
+
+void terminate(void);
 
 #endif /* MEMORIA_H_ */

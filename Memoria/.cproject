@@ -32,7 +32,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/tp-2017-1c-System-Buzz/Common}&quot;"/>
 								</option>
 								<option id="gnu.c.compiler.option.warnings.extrawarn.1324296647" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
-								<option id="gnu.c.compiler.option.warnings.pedantic.985706650" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.pedantic.985706650" name="Pedantic (-pedantic)" superClass="gnu.c.compiler.option.warnings.pedantic" value="false" valueType="boolean"/>
 								<option id="gnu.c.compiler.option.dialect.std.814459027" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.dialect.flags.1463354795" name="Other dialect flags" superClass="gnu.c.compiler.option.dialect.flags" value="-std=gnu11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.945710439" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>

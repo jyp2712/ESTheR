@@ -32,15 +32,7 @@ socket_t socket_listen(const char *port);
  * Función bloqueante que espera por conexiones en un socket servidor y las
  * acepta devolviendo el socket cliente.
  * @param sv_sock Descriptor del socket del servidor.
- * @return Descriptor del socket del cliente, mismo comportamiento que accept.
- */
-socket_t socket_accept_v2(socket_t sv_sock);
-
-/*
- * Función bloqueante que espera por conexiones en un socket servidor y las
- * acepta devolviendo el socket cliente.
- * @param sv_sock Descriptor del socket del servidor.
- * @return Descriptor del socket del cliente.
+ * @return Descriptor del socket del cliente (-1 si hubo error).
  */
 socket_t socket_accept(socket_t sv_sock);
 
@@ -74,18 +66,18 @@ size_t socket_send_bytes(const unsigned char *message, size_t size, socket_t soc
  * Recibe una cadena de texto por una conexión abierta en un determinado socket.
  * @param message Mensaje a recibir.
  * @param sockfd Descriptor del socket.
- * @return Número de bytes recibidos.
+ * @return Número de bytes recibidos (-1 si hubo error).
  */
-size_t socket_receive_string(char *message, socket_t sockfd);
+ssize_t socket_receive_string(char *message, socket_t sockfd);
 
 /**
  * Recibe datos binarios por una conexión abierta en un determinado socket.
  * @param message Mensaje a recibir.
  * @param size Tamaño de los datos.
  * @param sockfd Descriptor del socket.
- * @return Número de bytes recibidos.
+ * @return Número de bytes recibidos (-1 si hubo error).
  */
-size_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd);
+ssize_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd);
 
 /**
  * Crea un conjunto de sockets para ser usado por socket_select().

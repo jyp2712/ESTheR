@@ -4,20 +4,22 @@
 #include "socket.h"
 #include "globals.h"
 
-#define OP_UNDEFINED 0
-#define OP_HANDSHAKE 1
-#define OP_ME_INIPRO 2
-#define OP_ME_SOLBYTPAG 3
-#define OP_ME_ALMBYTPAG 4
-#define OP_ME_ASIPAGPRO 5
-#define OP_ME_FINPRO 6
-#define OP_KE_SENDINGDATA 7
+enum opcodes {
+	OP_UNDEFINED,
+	OP_HANDSHAKE,
+	OP_ME_INIPRO,
+	OP_ME_SOLBYTPAG,
+	OP_ME_ALMBYTPAG,
+	OP_ME_ASIPAGPRO,
+	OP_ME_FINPRO,
+	OP_KE_SENDINGDATA,
+	OP_NEW_PROGRAM,
+};
 
 typedef struct {
 	unsigned char syspid;	// ID del proceso de sistema emisor del paquete
 	unsigned char usrpid;	// ID del proceso de usuario emisor del paquete
 	unsigned char opcode;	// Código de operación
-	unsigned char retcode;	// Código de respuesta
 	unsigned long msgsize;	// Tamaño del cuerpo del paquete
 } header_t;
 
@@ -37,9 +39,12 @@ typedef struct {
  * opcode con el código de operación. El resto de los campos se
  * deja en cero.
  * @param opcode Código de operación
+ * @param opcode (Opcional) Tamaño del cuerpo del paquete.
  * @return Encabezado del paquete.
  */
-header_t protocol_header(unsigned char opcode);
+header_t _protocol_header(unsigned char opcode, unsigned long msgsize);
+#define protocol_header(...) __protocol_header(__VA_ARGS__, 0, 0)
+#define __protocol_header(o, m, ...) _protocol_header(o, m)
 
 /**
  * Crea un paquete para enviar una operación.

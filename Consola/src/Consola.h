@@ -21,7 +21,7 @@ typedef struct{    //estructura para enviar al hilo que inicia programa
 	int kernel_fd;
 }t_parametrosHilo;
 
-void leerConfiguracionConsola(t_consola *consola, char *path);
+void leerConfiguracionConsola(const char *path);
 
 void  iniciarPrograma(t_parametrosHilo * pamHilo);//Funcion para que cada hilo
 										//inice un programa

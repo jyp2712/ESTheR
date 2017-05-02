@@ -5,11 +5,12 @@
 
 #define HEADER_SIZE 7
 
-header_t protocol_header(unsigned char opcode) {
+header_t _protocol_header(unsigned char opcode, unsigned long msgsize) {
 	header_t header;
 	memset(&header, 0, sizeof header);
 	header.syspid = get_current_process();
 	header.opcode = opcode;
+	header.msgsize = msgsize;
 	return header;
 }
 
