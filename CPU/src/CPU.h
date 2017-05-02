@@ -4,6 +4,14 @@
 #define PACKAGESIZE 1024
 #define BACKLOG 5
 
+#include <commons/config.h>
+#include "utils.h"
+#include "socket.h"
+#include "protocol.h"
+#include "serial.h"
+#include "log.h"
+#include <commons/collections/list.h>
+#include <ctype.h>
 #include <parser/parser.h>
 #include "structures.h"
 
@@ -14,6 +22,7 @@ typedef struct{
 	char* puerto_memoria;
 }t_cpu;
 
+char proximaInstruccion[BUFFER_CAPACITY];
 int tamanioPagina;
 int memoria_fd;
 int kernel_fd;

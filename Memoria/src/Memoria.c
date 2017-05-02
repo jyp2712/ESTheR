@@ -106,11 +106,24 @@ void procesarCliente(void *arg) {
 			packet_t packet = protocol_packet (header, buff);
 			protocol_packet_send(packet, sockfd);
 			break;
+		case OP_CPU_PROX_INST_REQUEST:
+			header = protocol_header (OP_CPU_PROX_INST_REQUEST);
+			header.msgsize = serial_pack(buff, "s", buscarProximaInstruccion());
+			packet_t packet2 = protocol_packet (header, buff);
+			protocol_packet_send(packet2, sockfd);
+			break;
 		default:
 			quitarConexion(sockfd, "Invalid operation");
 			return;
 		}
 	}
+}
+
+char* buscarProximaInstruccion(){
+
+	//TODO metodo de busqueda de proxima instruccion
+
+	return "variables a, b";
 }
 
 void quitarConexion(socket_t sockfd, char *msg) {

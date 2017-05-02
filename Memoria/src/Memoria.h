@@ -31,6 +31,8 @@ void quitarConexion(socket_t sockfd, char *msg);
 
 void interpreteDeComandos(void);
 
+char* buscarProximaInstruccion();
+
 void terminate(void);
 
 #endif /* MEMORIA_H_ */

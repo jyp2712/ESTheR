@@ -1,12 +1,4 @@
 #include "CPU.h"
-#include <commons/config.h>
-#include "utils.h"
-#include "socket.h"
-#include "protocol.h"
-#include "serial.h"
-#include "log.h"
-#include <commons/collections/list.h>
-#include <ctype.h>
 
 int main(int argc, char **argv) {
 
@@ -64,8 +56,8 @@ void pedirTamPagAMemoria(){
 	packet_t packet2 = protocol_packet_receive(memoria_fd);
 	serial_unpack(packet2.payload, "h", &tamanioPagina);
 
-	printf("Tamanio pagina obtenido: %i\n", tamanioPagina);
-	log_inform("Tamanio pagina obtenido: %i\n", tamanioPagina);
+	printf("Tamanio pagina obtenida: %i\n", tamanioPagina);
+	log_inform("Tamanio pagina obtenida: %i", tamanioPagina);
 }
 
 void finalizarCPU(){
@@ -82,8 +74,6 @@ int recibirMensajesDeKernel(){
 
 		pcbActual = alloc(sizeof(t_pcb));
 		serial_unpack(packet.payload, "hh", &pcbActual->idProcess, &pcbActual->pagesCode);
-
-		//Asignar pcb recibido a pcbActual
 
 		ejecutarPrograma();
 
@@ -114,7 +104,20 @@ void ejecutarPrograma(){
 
 char* pedirProximaInstruccionAMemoria(){
 
-	return "variables a, b";
+	//Pedir proxima instruccion a memoria
+	log_inform("Pido proxima instruccion a memoria");
+
+	header_t header = protocol_header (OP_CPU_PROX_INST_REQUEST);
+	packet_t packet1 = protocol_packet (header);
+	protocol_packet_send(packet1, memoria_fd);
+
+	//Recibo proxima instruccion a ejecutar
+	packet_t packet2 = protocol_packet_receive(memoria_fd);
+	serial_unpack(packet2.payload , "s", &proximaInstruccion);
+
+	printf("Instruccion obtenida: %s\n", proximaInstruccion);
+
+	return proximaInstruccion;
 
 }
 
