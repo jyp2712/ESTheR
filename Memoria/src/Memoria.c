@@ -8,6 +8,7 @@
 #include "thread.h"
 #include "Configuracion.h"
 #include "operations.h"
+#include "serial.h"
 
 #define CANT_CLIENTES 100
 
@@ -94,6 +95,10 @@ void procesarCliente(void *arg) {
 			return;
 		}
 
+		header_t header;
+		int tamanioPag = 10; //Harcodeada, deberiamos levantarla del archivo de config, no entendi si era el MARCO_SIZE u otra cosa
+		unsigned char buff[BUFFER_CAPACITY];
+
 		switch(packet.header.opcode){
 		case OP_ME_INIPRO:
 			break;
@@ -104,6 +109,12 @@ void procesarCliente(void *arg) {
 		case OP_ME_ASIPAGPRO:
 			break;
 		case OP_ME_FINPRO:
+			break;
+		case OP_CPU_TAMPAG_REQUEST:
+			header = protocol_header (OP_CPU_TAMPAG_REQUEST);
+			header.msgsize = serial_pack(buff, "h", tamanioPag);
+			packet_t packet = protocol_packet (header, buff);
+			protocol_packet_send(packet, sockfd);
 			break;
 		default:
 			quitarConexion(sockfd, "Invalid operation");

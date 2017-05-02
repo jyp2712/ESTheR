@@ -16,17 +16,11 @@ int main(int argc, char **argv) {
 	cpu = malloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
 
-	puts("Conectándose a la Memoria...");
-	memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
-	protocol_handshake_send(memoria_fd);
-	puts("Conectado.");
+	conectarAMemoria();
+
+	conectarAKernel();
 
 	pedirTamPagAMemoria();
-
-	puts("Conectándose al Kernel...");
-	kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
-	protocol_handshake_send(kernel_fd);
-	puts("Conectado.");
 
 	while(true){
 		log_inform("Esperando nuevo proceso a ejecutar.");
@@ -42,17 +36,42 @@ int main(int argc, char **argv) {
 
 }
 
-void finalizarCPU(){
-	free(cpu);
-	socket_close(kernel_fd);
-	socket_close(memoria_fd);
+void conectarAMemoria(){
+	puts("Conectándose a la Memoria...");
+	memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
+	protocol_handshake_send(memoria_fd);
+	puts("Conectado.");
+}
+
+void conectarAKernel(){
+	puts("Conectándose al Kernel...");
+	kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
+	protocol_handshake_send(kernel_fd);
+	puts("Conectado.");
 }
 
 void pedirTamPagAMemoria(){
 
-	//Pedir tamPag a memoria y setearlo en var local
+	//Pedir tamPag a memoria
+	log_inform("Pido tamanio de pagina a memoria");
 
-	tamanioPagina = 10;
+	header_t header = protocol_header (OP_CPU_TAMPAG_REQUEST);
+	packet_t packet1 = protocol_packet (header);
+	protocol_packet_send(packet1, memoria_fd);
+
+	//Recibir tamPag de memoria
+
+	packet_t packet2 = protocol_packet_receive(memoria_fd);
+	serial_unpack(packet2.payload, "h", &tamanioPagina);
+
+	printf("Tamanio pagina obtenido: %i\n", tamanioPagina);
+	log_inform("Tamanio pagina obtenido: %i\n", tamanioPagina);
+}
+
+void finalizarCPU(){
+	free(cpu);
+	socket_close(kernel_fd);
+	socket_close(memoria_fd);
 }
 
 int recibirMensajesDeKernel(){
@@ -96,7 +115,6 @@ void ejecutarPrograma(){
 char* pedirProximaInstruccionAMemoria(){
 
 	return "variables a, b";
-
 
 }
 
