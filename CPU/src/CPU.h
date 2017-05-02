@@ -20,6 +20,9 @@ int kernel_fd;
 t_pcb* pcbActual;
 t_cpu* cpu;
 
+void conectarAMemoria();
+void conectarAKernel();
+void pedirTamPagAMemoria();
 void finalizarCPU();
 t_stack* t_stack_create();
 bool esArgumento(t_nombre_variable identificador_variable);

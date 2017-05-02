@@ -14,6 +14,7 @@ enum opcodes {
 	OP_ME_FINPRO,
 	OP_KE_SENDINGDATA,
 	OP_NEW_PROGRAM,
+	OP_CPU_TAMPAG_REQUEST
 };
 
 typedef struct {
