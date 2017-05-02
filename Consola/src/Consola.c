@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
 
 void leerConfiguracionConsola(const char *path) {
 	config = malloc(sizeof(t_consola));
-	t_config* conf = config_create(path);
+	t_config* conf = config_create((char*) path);
 
 	config->ip_kernel = config_get_string_value(conf, "IP_KERNEL");
 	config->puerto_kernel = config_get_string_value(conf, "PUERTO_KERNEL");

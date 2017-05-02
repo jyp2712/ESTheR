@@ -2,6 +2,7 @@
 #define utils_h
 
 #include "globals.h"
+#include "macros.h"
 
 /**
  * Termina el programa normalmente si no se le pasa ningún mensaje de error.
