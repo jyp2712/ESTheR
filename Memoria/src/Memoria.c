@@ -7,12 +7,21 @@
 #include "protocol.h"
 #include "thread.h"
 #include "Configuracion.h"
+#include "operations.h"
 
 #define CANT_CLIENTES 100
 
 t_memoria *config;
 thread_t thServidor;
 socket_t skServidor;
+
+char command[BUFFER_CAPACITY];
+
+// Estado global de la Memoria
+struct {
+	byte *main; 	// Puntero a la memoria principal
+	unsigned delay; // Retardo de acceso en milisegundos
+} memory;
 
 bool kernelConectado = false;
 
@@ -40,7 +49,8 @@ int main(int argc, char **argv) {
 }
 
 void inicializar(){
-
+	memory.main = alloc(config->marco_size * sizeof(byte));
+	memory.delay = config->retardo_memoria;
 }
 
 void crearServidor(){
@@ -107,20 +117,29 @@ void quitarConexion(socket_t sockfd, char *msg) {
 	socket_close(sockfd);
 }
 
-void interpreteDeComandos() {
-	char comando[80];
+void set_delay(string delaystr) {
+	int delayint;
+	if(delaystr == NULL) {
+		printf("%u ms\n", memory.delay);
+	} else if((delayint = strtoi(delaystr)) != -1) {
+		memory.delay = delayint;
+	}
+}
 
+void interpreteDeComandos() {
 	title("Consola");
 	while(true) {
-		input(comando);
+		char *argument = input(command);
+		if(streq(command, "fin")) return;
 
-		if(streq(comando, "?")) {
+		if(streq(command, "?")) {
 			printf("Comandos disponibles:\n");
+			printf(" delay\n   Cambia o muestra el retardo de acceso a memoria\n");
 			printf(" fin\n   Finaliza la terminal\n");
 			printf(" dump\n   Dump de la memoria\n");
-		} else if(streq(comando, "fin")) {
-			return;
-		} else if(streq(comando, "dump")) {
+		} else if(streq(command, "delay")) {
+			set_delay(argument);
+		} else if(streq(command, "dump")) {
 			printf("Dump...\n");
 		} else {
 			puts("Comando no reconocido. Escriba '?' para ayuda.");
@@ -132,5 +151,6 @@ void terminate() {
 	thread_kill(thServidor);
 	socket_close(skServidor);
 	free(config);
+	free(memory.main);
 	puts("Proceso Memoria finalizado con éxito");
 }

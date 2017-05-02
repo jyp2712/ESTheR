@@ -10,6 +10,7 @@
 #include "serial.h"
 #include "structures.h"
 #include "thread.h"
+#include "log.h"
 
 #include <unistd.h>
 #include <sys/socket.h>
@@ -40,7 +41,7 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 				process_t cli_process = protocol_handshake_receive(cli_sock);
 				if(cli_process == CONSOLE || cli_process == CPU) {
 					socket_set_add(cli_sock, &all_fds);
-					printf("Recibido handshake de%s\n", cli_process == CPU ? "l CPU" : " la Consola");
+					log_inform("Received handshake from %s\n", get_process_name(cli_process));
 				} else {
 					socket_close(cli_sock);
 				}

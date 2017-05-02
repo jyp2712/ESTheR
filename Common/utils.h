@@ -34,10 +34,11 @@ void fdcheck(long fd);
 void mkdirs(const char *path);
 
 /**
- * Lee una línea de stdin y la guarda en buffer.
- * @param buffer Búfer donde se guardará la cadena leída.
+ * Lee una comando de stdin y lo guarda en buffer.
+ * @param buffer Búfer donde se guardará el comando.
+ * @return Devuelve un puntero a la posición del argumento.
  */
-void input(char *buffer);
+char *input(char *buffer);
 
 /**
  * Lee un archivo de texto y lo copia en un búfer de tamaño BUFFER_CAPACITY.
@@ -86,6 +87,14 @@ void *alloc(size_t size);
  * Imprime un título por pantalla.
  * @param text Texto del título.
  */
-void title(const char *text);
+void title(string text);
+
+/**
+ * Convierte una cadena de texto a un entero positivo.
+ * Si no se puede convertir devuelve -1.
+ * @param text Texto a convertir.
+ * @return Entero convertido.
+ */
+int strtoi(string text);
 
 #endif /* utils_h */

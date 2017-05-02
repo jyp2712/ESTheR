@@ -16,6 +16,8 @@ socket_t kernel_fd;
 thread_t threads[MAX_THREADS];
 unsigned nthread = 0;
 
+char command[BUFFER_CAPACITY];
+
 void show_command_list() {
 	puts("run <ruta> - ejecuta el programa AnSISOP en la ruta especificada");
 	puts("kill <pid> - termina el programa correspondiente al PID especificado");
@@ -69,7 +71,7 @@ void run_program(const char *path) {
 }
 
 void start_program_thread(const char *path) {
-	if(*path == '\0') {
+	if(path == NULL) {
 		puts("Debe ingresar una ruta al archivo.");
 		return;
 	}
@@ -83,6 +85,7 @@ void start_program_thread(const char *path) {
 }
 
 int main(int argc, char **argv) {
+
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(CONSOLE);
 	title("CONSOLA");
@@ -92,18 +95,16 @@ int main(int argc, char **argv) {
 	connect_to_kernel();
 
 //------------Envio de mensajes al servidor------------
-	char command[BUFFER_CAPACITY] = {0};
-
 	title("Consola");
 	while(true) {
-		input(command);
+		char *argument = input(command);
 		if(streq(command, "logout")) break;
 		if(streq(command, "help")) {
 			show_command_list();
 		} else if(streq(command, "clear")) {
 			clear_screen();
-		} else if(string_starts_with(command, "run")) {
-			start_program_thread(command + 4);
+		} else if(streq(command, "run")) {
+			start_program_thread(argument);
 		} else {
 			puts("Comando no reconocido. Escriba 'help' para ayuda.");
 		}
