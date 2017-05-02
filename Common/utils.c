@@ -27,10 +27,16 @@ void mkdirs(const char *path) {
 	free(cmd);
 }
 
-void input(char *buffer) {
+char *input(char *command) {
 	printf("> ");
-	fgets(buffer, BUFFER_CAPACITY, stdin);
-	buffer[strcspn(buffer, "\n")] = '\0';
+	fgets(command, BUFFER_CAPACITY, stdin);
+	command[strcspn(command, "\n")] = '\0';
+	char *p = strchr(command, ' ');
+	if(p != NULL) {
+		*p = '\0';
+		p++;
+	}
+	return p;
 }
 
 ssize_t readfile(const char *path, char *buffer) {
@@ -83,6 +89,12 @@ void *alloc(size_t size) {
 	return p;
 }
 
-void title(const char *text) {
+void title(string text) {
 	printf("\n\33[1m\33[4m\33[33m%s\33[0m\n", text);
+}
+
+int strtoi(string text) {
+	char *p;
+	int res = (int) strtol(text, &p, 10);
+	return *p == '\0' ? res : -1;
 }

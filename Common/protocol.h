@@ -44,9 +44,8 @@ typedef struct {
  * @param opcode (Opcional) Tamaño del cuerpo del paquete.
  * @return Encabezado del paquete.
  */
-header_t _protocol_header(unsigned char opcode, unsigned long msgsize);
-#define protocol_header(...) __protocol_header(__VA_ARGS__, 0, 0)
-#define __protocol_header(o, m, ...) _protocol_header(o, m)
+header_t protocol_header(unsigned char opcode, unsigned long msgsize);
+#define protocol_header(...) DEFAULTS(protocol_header, 2, ##__VA_ARGS__, 0)
 
 /**
  * Crea un paquete para enviar una operación.

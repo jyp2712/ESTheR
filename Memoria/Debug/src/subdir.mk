@@ -5,15 +5,18 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/Configuracion.c \
-../src/Memoria.c 
+../src/Memoria.c \
+../src/operations.c 
 
 OBJS += \
 ./src/Configuracion.o \
-./src/Memoria.o 
+./src/Memoria.o \
+./src/operations.o 
 
 C_DEPS += \
 ./src/Configuracion.d \
-./src/Memoria.d 
+./src/Memoria.d \
+./src/operations.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
