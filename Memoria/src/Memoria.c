@@ -117,8 +117,14 @@ void procesarCliente(void *arg) {
 			protocol_packet_send(packet, sockfd);
 			break;
 		case OP_CPU_PROX_INST_REQUEST:
-			header = protocol_header (OP_CPU_PROX_INST_REQUEST);
-			header.msgsize = serial_pack(buff, "s", buscarProximaInstruccion());
+
+			//Recibo pagina, offset de inicio y tamaño de lo que tengo que leer y enviar
+			t_solicitudLectura* direccionInstruccion = alloc(t_solicitudLectura);
+			serial_unpack(buff, "hhh", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
+
+			//Validar si se puede acceder a esa direccion y responder con Ok o Fail (mirar como esta en CPU)
+			header = protocol_header (OP_ME_PROX_INST_REQUEST_OK);
+			header.msgsize = serial_pack(buff, "s", buscarProximaInstruccion(direccionInstruccion));
 			packet_t packet2 = protocol_packet (header, buff);
 			protocol_packet_send(packet2, sockfd);
 			break;
@@ -129,9 +135,9 @@ void procesarCliente(void *arg) {
 	}
 }
 
-char* buscarProximaInstruccion(){
+char* buscarProximaInstruccion(t_solicitudLectura){
 
-	//TODO metodo de busqueda de proxima instruccion
+	//TODO metodo de busqueda de proxima instruccion en el index code
 
 	return "variables a, b";
 }
