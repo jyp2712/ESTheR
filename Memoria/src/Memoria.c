@@ -122,7 +122,7 @@ void procesarCliente(void *arg) {
 
 			//Recibo pagina, offset de inicio y tamaño de lo que tengo que leer y enviar
 			direccionInstruccion = alloc(sizeof(t_solicitudLectura));
-			serial_unpack(buff, "hhh", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
+			serial_unpack(buff, "hhh", &direccionInstruccion->page, &direccionInstruccion->offset, &direccionInstruccion->size);
 
 			//Validar si se puede acceder a esa direccion y responder con Ok o Fail (mirar como esta en CPU)
 			header = protocol_header (OP_ME_PROX_INST_REQUEST_OK);

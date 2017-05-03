@@ -5,9 +5,11 @@ int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(CPU);
 
+	title("CPU");
 	cpu = alloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
 
+	title("Conexión");
 	conectarAMemoriaYRecibirTamPag();
 
 	conectarAKernelYRecibirStackSize();
@@ -27,10 +29,10 @@ int main(int argc, char **argv) {
 }
 
 void conectarAMemoriaYRecibirTamPag(){
-	puts("Conectándose a la Memoria...");
+	printf("Estableciendo conexión con la Memoria...");
 	memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
 	protocol_handshake_send(memoria_fd);
-	puts("Conectado.");
+	printf("\33[2K\rConectado a la Memoria en %s:%s\n", cpu->ip_memoria, cpu->puerto_memoria);
 
 	//Pedir tamPag a memoria
 	log_inform("Pido tamanio de pagina a memoria");
@@ -49,10 +51,10 @@ void conectarAMemoriaYRecibirTamPag(){
 }
 
 void conectarAKernelYRecibirStackSize(){
-	puts("Conectándose al Kernel...");
+	printf("Estableciendo conexión con el Kernel...");
 	kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
 	protocol_handshake_send(kernel_fd);
-	puts("Conectado.");
+	printf("\33[2K\rConectado al Kernel en %s:%s\n", cpu->ip_kernel, cpu->puerto_kernel);
 
 	packet_t packet = protocol_packet_receive(kernel_fd);
 	serial_unpack(packet.payload, "h", &stackSize);
@@ -101,7 +103,7 @@ char* pedirProximaInstruccionAMemoria(){
 	int longitud = instruccion->offset;
 
 	// Obtengo la dirección lógica de la instrucción a partir del índice de código:
-	t_solicitudLectura* direccionInstruccion = (sizeof(t_solicitudLectura));
+	t_solicitudLectura* direccionInstruccion = alloc(sizeof(t_solicitudLectura));
 	direccionInstruccion->page = comienzo / tamanioPagina;
 	direccionInstruccion->offset = comienzo % tamanioPagina;
 	direccionInstruccion->size = longitud;
@@ -283,11 +285,10 @@ void leerConfiguracionCPU(t_cpu* cpu, char* path) {
 	cpu->ip_memoria = config_get_string_value(config, "IP_MEMORIA");
 	cpu->puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");
 
-	printf("---------------Mi configuración---------------\n");
+	title("Configuración");
 	printf("IP KERNEL: %s\n", cpu->ip_kernel);
 	printf("PUERTO KERNEL: %s\n", cpu->puerto_kernel);
 	printf("IP MEMORIA: %s\n", cpu->ip_memoria);
 	printf("PUERTO MEMORIA: %s\n", cpu->puerto_memoria);
-	printf("----------------------------------------------\n");
 }
 
