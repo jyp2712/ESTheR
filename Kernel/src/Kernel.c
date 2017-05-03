@@ -20,14 +20,14 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
-	char buffer[BUFFER_CAPACITY];
+void init_server(t_kernel* kernel, socket_t mem_fd, socket_t fs_fd) {
+	t_list* pcb_list = list_create();
 
 	fdset_t read_fds, all_fds = socket_set_create();
 	socket_set_add(mem_fd, &all_fds);
 //	socket_set_add(fs_fd, &all_fds);
 
-	socket_t sv_sock = socket_init(NULL, port);
+	socket_t sv_sock = socket_init(NULL, kernel->puerto_prog);
 	socket_set_add(sv_sock, &all_fds);
 
 	while(true) {
@@ -46,18 +46,24 @@ void init_server(const char *port, socket_t mem_fd, socket_t fs_fd) {
 					socket_close(cli_sock);
 				}
 			} else {
-				if(socket_receive_string(buffer, i) == 0 ) {
+				packet_t program = protocol_packet_receive(i);
+				if(program.header.opcode == OP_UNDEFINED) {
 					socket_close(i);
 					FD_CLR(i, &all_fds.set);
 					continue;
-				}
-
-				if(i == CONSOLE) {
-					socket_receive_string(buffer, i);
-				}
-				for(socket_t j = 0; j <= all_fds.max; j++) {
-					if(!FD_ISSET(j, &all_fds.set) || j == sv_sock || j == i) continue;
-					gestion_datos_pcb(buffer,j, mem_fd);
+				}else{
+					if(program.header.opcode == OP_NEW_PROGRAM && pcb_list->elements_count < kernel->grado_multiprog) {
+						for(socket_t j = 0; j <= all_fds.max; j++) {
+							if(!FD_ISSET(j, &all_fds.set) || j == sv_sock || j == i) continue;
+								gestion_datos_pcb((char*)program.payload, j, mem_fd, pcb_list);
+						}
+					}else{
+						if(pcb_list->elements_count >= kernel->grado_multiprog){
+							packet_t packet = protocol_packet(protocol_header(OP_KE_REFUSEPROGRAM));
+							protocol_packet_send(packet, i);
+							printf("Ya hay un programa en ejecución\n");
+						}
+					}
 				}
 			}
 		}
@@ -91,7 +97,7 @@ int main(int argc, char **argv) {
 
 	thread_create(terminal);
 
-	init_server(kernel->puerto_prog, memoria_fd, fs_fd);
+	init_server(kernel, memoria_fd, fs_fd);
 
 	free(kernel);
 	return 0;
@@ -131,6 +137,7 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 		printf("QUANTUM: %i\n", kernel->quantum);
 		printf("QUANTUM_SLEEP: %i\n", kernel->quantum_sleep);
 		printf("ALGORITMO: %s\n", kernel->algoritmo);
+		printf("GRADO_MULTIPROG: %i\n", kernel->grado_multiprog);
 		printf("SEM_IDS:[%s, %s ,%s]\n", kernel->sem_ids[0].__size, kernel->sem_ids[1].__size, kernel->sem_ids[2].__size);
 		printf("SEM_INIT:[%d, %d ,%d]\n", kernel->sem_init[0], kernel->sem_init[1], kernel->sem_init[2]);
 		printf("STACK_SIZE: %i\n", kernel->stack_size);
@@ -139,10 +146,10 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 	t_pcb *element = alloc(sizeof(t_pcb));
 
-	element->idProcess = 25;
+	element->idProcess = 0;
 	element->PC = program->instruccion_inicio;
 	element->status = NEW;
-	element->pagesCode = 32;
+	element->pagesCode = 0;
 	element->instructions = program->instrucciones_size;
 	element->indexCode = program->instrucciones_serializado;
 
@@ -170,18 +177,31 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 	return element;
 }
 
-void gestion_datos_pcb(char* buffer, socket_t cli_socket, socket_t server_socket) {
+void gestion_datos_pcb(char* buffer, socket_t cli_socket, socket_t server_socket, t_list* lista) {
 
 	t_metadata_program* dataProgram = metadata_desde_literal(buffer);
 	t_pcb* pcb = crear_pcb_proceso(dataProgram);
-
+	list_add(lista, pcb);
 	unsigned char buff[BUFFER_CAPACITY];
-	header_t header_pcb = protocol_header (OP_KE_SENDINGDATA);
-	header_pcb.msgsize = serial_pack (buff, "hh", pcb->idProcess, pcb->pagesCode);
-	packet_t packet_pcb = protocol_packet (header_pcb, buff);
-	protocol_packet_send(packet_pcb, cli_socket);
-	protocol_packet_send(packet_pcb, server_socket);
 
+	packet_t packet = protocol_packet(protocol_header(OP_ME_SOLBYTPAG));
+	protocol_packet_send(packet, server_socket);
+
+	//Hasta que memoria responda el OK
+
+	/*packet = protocol_packet_receive(server_socket);
+	 *
+	if (packet.header.usrpid == ACCEPT){*/
+
+		header_t header_pcb = protocol_header (OP_KE_SENDINGDATA);
+		header_pcb.msgsize = serial_pack (buff, "hh", pcb->idProcess, pcb->pagesCode);
+		packet_t packet_pcb = protocol_packet (header_pcb, buff);
+
+		/*protocol_packet_send(packet_pcb, server_socket);*/
+
+		protocol_packet_send(packet_pcb, cli_socket);
+
+	/*}*/
 
 	metadata_destruir(dataProgram);
 
