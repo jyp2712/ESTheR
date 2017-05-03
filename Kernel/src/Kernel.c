@@ -39,10 +39,23 @@ void init_server(t_kernel* kernel, socket_t mem_fd, socket_t fs_fd) {
 			if(i == sv_sock) {
 				socket_t cli_sock = socket_accept(sv_sock);
 				process_t cli_process = protocol_handshake_receive(cli_sock);
-				if(cli_process == CONSOLE || cli_process == CPU) {
+				if(cli_process == CONSOLE) {
 					socket_set_add(cli_sock, &all_fds);
 					log_inform("Received handshake from %s\n", get_process_name(cli_process));
-				} else {
+				}
+				else if(cli_process == CPU){
+					socket_set_add(cli_sock, &all_fds);
+					log_inform("Received handshake from %s\n", get_process_name(cli_process));
+
+					log_inform("Envio stack size a CPU");
+					unsigned char buff[BUFFER_CAPACITY];
+					header_t header = protocol_header(OP_KE_SEND_STACK_SIZE);
+					header.msgsize = serial_pack(buff, "h", kernel->stack_size);
+					packet_t packet = protocol_packet(header, buff);
+					protocol_packet_send(packet, cli_sock);
+
+				}
+				else {
 					socket_close(cli_sock);
 				}
 			} else {

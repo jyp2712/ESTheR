@@ -26,12 +26,12 @@ char proximaInstruccion[BUFFER_CAPACITY];
 int tamanioPagina;
 int memoria_fd;
 int kernel_fd;
+int stackSize;
 t_pcb* pcbActual;
 t_cpu* cpu;
 
-void conectarAMemoria();
-void conectarAKernel();
-void pedirTamPagAMemoria();
+void conectarAMemoriaYRecibirTamPag();
+void conectarAKernelYRecibirStackSize();
 void finalizarCPU();
 t_stack* t_stack_create();
 bool esArgumento(t_nombre_variable identificador_variable);
