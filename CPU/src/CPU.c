@@ -103,20 +103,21 @@ char* pedirProximaInstruccionAMemoria(){
 	int longitud = instruccion->offset;
 
 	// Obtengo la dirección lógica de la instrucción a partir del índice de código:
-	t_solicitudLectura* direccionInstruccion = alloc(sizeof(t_solicitudLectura));
-	direccionInstruccion->page = comienzo / tamanioPagina;
-	direccionInstruccion->offset = comienzo % tamanioPagina;
-	direccionInstruccion->size = longitud;
+	t_solicitudLectura* lectura = alloc(sizeof(t_solicitudLectura));
+	lectura->idProcess = pcbActual->idProcess;
+	lectura->page = comienzo / tamanioPagina;
+	lectura->offset = comienzo % tamanioPagina;
+	lectura->size = longitud;
 
-	log_inform("Solicitando Instrucción -> Pagina: %d - Offset: %d - Size: %d.", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
+	log_inform("Solicitando Instrucción -> Pid: %d Pagina: %d - Offset: %d - Size: %d.", lectura->idProcess, lectura->page, lectura->offset, lectura->size);
 
 	unsigned char buff[BUFFER_CAPACITY];
 	header_t header = protocol_header (OP_CPU_PROX_INST_REQUEST);
-	header.msgsize = serial_pack (buff, "hhh", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
+	header.msgsize = serial_pack (buff, "hhhh", lectura->idProcess, lectura->page, lectura->offset, lectura->size);
 	packet_t packet = protocol_packet (header, buff);
 	protocol_packet_send(packet, memoria_fd);
 
-	free(direccionInstruccion);
+	free(lectura);
 
 	//Recibo proxima instruccion a ejecutar
 	packet_t packet2 = protocol_packet_receive(memoria_fd);
@@ -159,93 +160,105 @@ bool esArgumento(t_nombre_variable identificador_variable){
 
 t_puntero definirVariable(t_nombre_variable identificador_variable){
 
-	if(esArgumento(identificador_variable)){
+	if(pcbActual->stackPointer + 4 > stackSize * tamanioPagina){
+		if(!huboStackOver){
+			printf("StackOverFlow");
+			log_report("StackOverflow. Se finaliza el proceso");
+			huboStackOver = true;
+		}
+		return -1;
+	}
+
+	if(!esArgumento(identificador_variable)){
+
+		log_inform("Defino nuevo variable '%c'", identificador_variable);
+		t_var* nuevaVar = malloc(sizeof(t_var));
+		t_stack* lineaStack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
+
+		if(lineaStack == NULL){ // si no hay registros, creo uno nuevo
+			lineaStack = t_stack_create();
+			list_add(pcbActual->indexStack, lineaStack);
+		}
+
+		nuevaVar->id = identificador_variable;
+		nuevaVar->mempos.page = pcbActual->stackPointer / tamanioPagina; //sumar la cantPaginas al hacer la solicitud + pcbActual->pagesCode;
+		nuevaVar->mempos.offset = pcbActual->stackPointer % tamanioPagina;
+		nuevaVar->mempos.size = sizeof(int);
+		list_add(lineaStack->vars, nuevaVar);
+		pcbActual->stackPointer += sizeof(int);
+
+		log_inform("Posicion relativa de %c -> %d %d %d", nuevaVar->id, nuevaVar->mempos.page, nuevaVar->mempos.offset, nuevaVar->mempos.size);
+		log_inform("Posicion absoluta de %c: %i", identificador_variable, pcbActual->stackPointer - sizeof(int));
+		return pcbActual->stackPointer - sizeof(int);
+
+	} else {
+
 		log_inform("Defino nuevo argumento '%c'", identificador_variable);
-	} else {
-		log_inform("Defino nueva variable '%c'", identificador_variable);
+		t_var* nuevoArg = malloc(sizeof(t_var));
+		t_stack* lineaStack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count - 1);
+
+		if(lineaStack == NULL){ // si no hay registros, creo uno nuevo
+			lineaStack = t_stack_create();
+			lineaStack->retPos = pcbActual->PC; // se crea en -1
+			list_add(pcbActual->indexStack, lineaStack);
+		}
+
+		nuevoArg->mempos.page = pcbActual->stackPointer / tamanioPagina; // + pcbActual->pagesCode
+		nuevoArg->mempos.offset = pcbActual->stackPointer % tamanioPagina;
+		nuevoArg->mempos.size = sizeof(int);
+		list_add(lineaStack->args, nuevoArg);
+		pcbActual->stackPointer += sizeof(int);
+
+		log_inform("Posicion relativa de %c -> %d %d %d", identificador_variable, nuevoArg->mempos.page, nuevoArg->mempos.offset, nuevoArg->mempos.size);
+		log_inform("Posicion absoluta de %c: %d", identificador_variable, pcbActual->stackPointer - sizeof(int));
+		return pcbActual->stackPointer - sizeof(int);
+
 	}
-
-	//Agarro el ultimo stack
-	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
-
-	if(stack == NULL){ // si no hay registros, creo uno nuevo
-		stack = t_stack_create();
-		// Guardo el nuevo registro en el índice:
-		list_add(pcbActual->indexStack, stack);
-	}
-
-	int pageStack = 0;
-	int stackPointer = pcbActual->stackPointer;
-
-	while(stackPointer >= tamanioPagina){
-		(pageStack)++;
-		stackPointer -= tamanioPagina;
-	}
-
-	if(esArgumento(identificador_variable)){
-		t_var* argumento = alloc(sizeof(t_var));
-		argumento->id = identificador_variable;
-		argumento->mempos.offset = stackPointer;
-		argumento->mempos.page = pageStack;
-		argumento->mempos.size = sizeof(int);
-
-		list_add(stack->args, argumento);
-
-	} else {
-		t_var* variable = alloc(sizeof(t_var));
-		variable->id = identificador_variable;
-		variable->mempos.offset = stackPointer;
-		variable->mempos.page = pageStack;
-		variable->mempos.size = sizeof(int);
-
-		list_add(stack->vars, variable);
-	}
-
-	log_inform("'%c' -> Dirección stack definida: %i, %i, %i.", identificador_variable, pageStack, stackPointer, sizeof(int));
-
-	pcbActual->stackPointer += sizeof(int);
-
-	t_puntero posicion = (pageStack * tamanioPagina) + stackPointer;
-	log_inform("Posicion de '%c' es %i", identificador_variable, posicion);
-	return posicion;
 }
 
 t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
 
 	log_inform("Obtengo posicion de '%c'", identificador_variable);
 
-	t_stack* stack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
+	int i;
+	t_stack* entradaStack;
+	t_var* var_local;
+	t_var* argumento;
+	t_puntero posicion;
 
-	if(esArgumento(identificador_variable)){
-		if(stack->args->elements_count > 0){
-			int i;
-			for(i = 0; i < stack->args->elements_count; i++){
-				t_var* argumento = list_get(stack->args, i);
-				if(argumento->id == identificador_variable){
+	if(pcbActual->indexStack->elements_count == 0){
+		log_report("No hay nada en el indice de stack");
+		return EXIT_FAILURE;
+	}
+	else{
+		entradaStack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count - 1);
 
-					t_puntero posicion = (argumento->mempos.page * tamanioPagina) + argumento->mempos.offset;
-					log_inform("Posicion obtenida: %i", posicion);
-
-					return posicion;
-				}
+		if(!esArgumento(identificador_variable)){ // es una variable
+			for(i=0; i < entradaStack->vars->elements_count; i++){
+				var_local = list_get(entradaStack->vars, i);
+				if(var_local->id == identificador_variable)
+					break;
 			}
-		}
-	} else {
-		if(stack->vars->elements_count > 0){
-			int i;
-			for(i = 0; i < stack->vars->elements_count; i++){
-				t_var* variable = list_get(stack->vars, i);
-				if(variable->id == identificador_variable){
-
-					t_puntero posicion = (variable->mempos.page * tamanioPagina) + variable->mempos.offset;
-					log_inform("Posicion obtenida: %i", posicion);
-
-					return posicion;
-				}
+			if(entradaStack->vars->elements_count == i){
+				log_report("No se encontro la variable %c en el stack", identificador_variable);
+				return EXIT_FAILURE;
+			}
+			else{
+				posicion = var_local->mempos.page * tamanioPagina + var_local->mempos.offset;
+			}
+		} // es un argumento
+		else{
+			if(identificador_variable > entradaStack->args->elements_count){
+				return EXIT_FAILURE;
+			}else{
+				argumento = list_get(entradaStack->args,identificador_variable);
+				posicion = argumento->mempos.page * tamanioPagina + argumento->mempos.offset;
 			}
 		}
 	}
-	return 1;
+	log_inform("Posicion obtenida: %i", posicion);
+	return posicion;
+
 }
 
 t_valor_variable dereferenciar(t_puntero direccion_variable){
@@ -260,9 +273,9 @@ t_valor_variable dereferenciar(t_puntero direccion_variable){
 //Inserta una copia del valor en la variable ubicada en direccion_variable.
 void asignar(t_puntero direccion_variable, t_valor_variable valor){
 
-	log_inform("Asignar valor");
-}
+	log_inform("Asignar -> posicion var: %d - valor: %d", direccion_variable, valor);
 
+}
 
 void llamarSinRetorno(t_nombre_etiqueta etiqueta){
 

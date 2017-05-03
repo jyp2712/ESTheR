@@ -28,7 +28,7 @@ typedef struct {
 typedef struct {
 	char id;
 	t_indexCode mempos;
-}t_var; // o argumento, funcionan igual
+}t_var;
 
 // Elemento del Índice de Stack (en definitiva una función)
 typedef struct{
@@ -56,6 +56,7 @@ typedef struct {
 
 
 typedef struct {
+	int idProcess;
 	int page;
 	int offset;
 	int size;

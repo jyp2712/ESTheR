@@ -22,6 +22,7 @@ typedef struct{
 	char* puerto_memoria;
 }t_cpu;
 
+bool huboStackOver = false;
 char proximaInstruccion[BUFFER_CAPACITY];
 int tamanioPagina;
 int memoria_fd;
