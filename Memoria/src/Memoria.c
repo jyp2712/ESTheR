@@ -9,6 +9,7 @@
 #include "Configuracion.h"
 #include "operations.h"
 #include "serial.h"
+#include "structures.h"
 
 #define CANT_CLIENTES 100
 
@@ -98,6 +99,7 @@ void procesarCliente(void *arg) {
 		header_t header;
 		int tamanioPag = 10; //Harcodeada, deberiamos levantarla del archivo de config, no entendi si era el MARCO_SIZE u otra cosa
 		unsigned char buff[BUFFER_CAPACITY];
+		t_solicitudLectura* direccionInstruccion;
 
 		switch(packet.header.opcode){
 		case OP_ME_INIPRO:
@@ -119,7 +121,7 @@ void procesarCliente(void *arg) {
 		case OP_CPU_PROX_INST_REQUEST:
 
 			//Recibo pagina, offset de inicio y tamaño de lo que tengo que leer y enviar
-			t_solicitudLectura* direccionInstruccion = alloc(t_solicitudLectura);
+			direccionInstruccion = alloc(sizeof(t_solicitudLectura));
 			serial_unpack(buff, "hhh", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
 
 			//Validar si se puede acceder a esa direccion y responder con Ok o Fail (mirar como esta en CPU)
@@ -135,7 +137,7 @@ void procesarCliente(void *arg) {
 	}
 }
 
-char* buscarProximaInstruccion(t_solicitudLectura){
+char* buscarProximaInstruccion(t_solicitudLectura direccionInstruccion){
 
 	//TODO metodo de busqueda de proxima instruccion en el index code
 
