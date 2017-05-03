@@ -47,7 +47,7 @@ void init_server(t_kernel* kernel, socket_t mem_fd, socket_t fs_fd) {
 					socket_set_add(cli_sock, &all_fds);
 					log_inform("Received handshake from %s\n", get_process_name(cli_process));
 
-					log_inform("Envio stack size a CPU");
+					log_inform("Envio stack size (%i) a CPU", kernel->stack_size);
 					unsigned char buff[BUFFER_CAPACITY];
 					header_t header = protocol_header(OP_KE_SEND_STACK_SIZE);
 					header.msgsize = serial_pack(buff, "h", kernel->stack_size);
