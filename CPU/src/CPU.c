@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
 	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
 	set_current_process(CPU);
 
-	cpu = malloc(sizeof(t_cpu));
+	cpu = alloc(sizeof(t_cpu));
 	leerConfiguracionCPU(cpu, argv[1]);
 
 	conectarAMemoriaYRecibirTamPag();
@@ -68,18 +68,12 @@ void finalizarCPU(){
 }
 
 int recibirMensajesDeKernel(){
-
 	packet_t packet = protocol_packet_receive(kernel_fd);
-
 	if(packet.header.opcode == OP_KE_SENDINGDATA){
-
 		pcbActual = alloc(sizeof(t_pcb));
 		serial_unpack(packet.payload, "hh", &pcbActual->idProcess, &pcbActual->pagesCode);
-
 		ejecutarPrograma();
-
 		return true;
-
 	}
 	else{
 		log_report("Mensaje inválido de Kernel.");
@@ -90,42 +84,59 @@ int recibirMensajesDeKernel(){
 void ejecutarPrograma(){
 
 	log_inform("El proceso #%d entró en ejecución.", pcbActual->idProcess);
-	int quantum = pcbActual->quantum;
 
-	while(quantum > 0){
+	char* proximaInstruccion = pedirProximaInstruccionAMemoria();
 
-		char* proximaInstruccion = pedirProximaInstruccionAMemoria();
+	log_inform("Instrucción recibida: %s", proximaInstruccion);
 
-		log_inform("Instrucción recibida: %s", proximaInstruccion);
-
-		analizadorLinea(proximaInstruccion, &funcionesAnSISOP, &funcionesKernel);
-
-	}
+	analizadorLinea(proximaInstruccion, &funcionesAnSISOP, &funcionesKernel);
 }
 
 char* pedirProximaInstruccionAMemoria(){
 
-	//Pedir proxima instruccion a memoria
-	log_inform("Pido proxima instruccion a memoria");
+	t_intructions *index = pcbActual->indexCode;
+	index += pcbActual->PC;
+	t_intructions *instruccion = index;
+	int comienzo = instruccion->start;
+	int longitud = instruccion->offset;
 
+	// Obtengo la dirección lógica de la instrucción a partir del índice de código:
+	t_solicitudLectura* direccionInstruccion = (sizeof(t_solicitudLectura));
+	direccionInstruccion->page = comienzo / tamanioPagina;
+	direccionInstruccion->offset = comienzo % tamanioPagina;
+	direccionInstruccion->size = longitud;
+
+	log_inform("Solicitando Instrucción -> Pagina: %d - Offset: %d - Size: %d.", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
+
+	unsigned char buff[BUFFER_CAPACITY];
 	header_t header = protocol_header (OP_CPU_PROX_INST_REQUEST);
-	packet_t packet1 = protocol_packet (header);
-	protocol_packet_send(packet1, memoria_fd);
+	header.msgsize = serial_pack (buff, "hhh", direccionInstruccion->page, direccionInstruccion->offset, direccionInstruccion->size);
+	packet_t packet = protocol_packet (header, buff);
+	protocol_packet_send(packet, memoria_fd);
+
+	free(direccionInstruccion);
 
 	//Recibo proxima instruccion a ejecutar
 	packet_t packet2 = protocol_packet_receive(memoria_fd);
-	serial_unpack(packet2.payload , "s", &proximaInstruccion);
 
-	printf("Instruccion obtenida: %s\n", proximaInstruccion);
+	if(packet2.header.opcode == OP_ME_PROX_INST_REQUEST_OK){
 
-	return proximaInstruccion;
+		serial_unpack(packet2.payload , "s", &proximaInstruccion);
+		printf("Instruccion obtenida: %s\n", proximaInstruccion);
+		return proximaInstruccion;
+	}
+	else if(packet2.header.opcode == OP_ME_PROX_INST_REQUEST_FAIL){
 
+		printf("Pedido de instruccion a memoria fallo\n");
+		return NULL;
+	}
+	return NULL;
 }
 
 // Primitivas AnSISOP
 
 t_stack* t_stack_create(){
-	t_stack* stack = malloc(sizeof(t_stack));
+	t_stack* stack = alloc(sizeof(t_stack));
 	stack->args = list_create();
 	stack->vars = list_create();
 	stack->retPos = 0;
@@ -170,7 +181,7 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 	}
 
 	if(esArgumento(identificador_variable)){
-		t_var* argumento = malloc(sizeof(t_var));
+		t_var* argumento = alloc(sizeof(t_var));
 		argumento->id = identificador_variable;
 		argumento->mempos.offset = stackPointer;
 		argumento->mempos.page = pageStack;
@@ -179,7 +190,7 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 		list_add(stack->args, argumento);
 
 	} else {
-		t_var* variable = malloc(sizeof(t_var));
+		t_var* variable = alloc(sizeof(t_var));
 		variable->id = identificador_variable;
 		variable->mempos.offset = stackPointer;
 		variable->mempos.page = pageStack;

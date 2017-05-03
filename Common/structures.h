@@ -54,4 +54,11 @@ typedef struct {
 	int exitCode;				// Código de retorno del programa.
 } t_pcb;
 
+
+typedef struct {
+	int page;
+	int offset;
+	int size;
+}t_solicitudLectura;
+
 #endif /* STRUCTURES_H_ */
