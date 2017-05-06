@@ -58,6 +58,7 @@
 		__builtin_types_compatible_p(typeof(x), short) ? "%hd" : \
 		__builtin_types_compatible_p(typeof(x), unsigned char) ? "%hhu" : \
 		__builtin_types_compatible_p(typeof(x), void*) ? "%p" : \
+		__builtin_types_compatible_p(typeof(x), bool) ? "%d" : \
 		__builtin_types_compatible_p(typeof(x), char) ? "%c" : "void")
 
 #define typestr(x) \
@@ -72,6 +73,7 @@
 		__builtin_types_compatible_p(typeof(x), short) ? "short" : \
 		__builtin_types_compatible_p(typeof(x), unsigned char) ? "byte" : \
 		__builtin_types_compatible_p(typeof(x), void*) ? "pointer" : \
+		__builtin_types_compatible_p(typeof(x), bool) ? "bool" : \
 		__builtin_types_compatible_p(typeof(x), char) ? "char" : "void")
 
 #define __1debug(x) \

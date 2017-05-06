@@ -6,16 +6,19 @@
 C_SRCS += \
 ../src/Configuracion.c \
 ../src/Memoria.c \
+../src/cache.c \
 ../src/operations.c 
 
 OBJS += \
 ./src/Configuracion.o \
 ./src/Memoria.o \
+./src/cache.o \
 ./src/operations.o 
 
 C_DEPS += \
 ./src/Configuracion.d \
 ./src/Memoria.d \
+./src/cache.d \
 ./src/operations.d 
 
 

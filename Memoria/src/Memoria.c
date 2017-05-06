@@ -10,6 +10,7 @@
 #include "operations.h"
 #include "serial.h"
 #include "structures.h"
+#include "cache.h"
 
 #define CANT_CLIENTES 100
 
@@ -53,6 +54,7 @@ int main(int argc, char **argv) {
 void inicializar(){
 	memory.main = alloc(config->marco_size * sizeof(byte));
 	memory.delay = config->retardo_memoria;
+	cache_create(config->entradas_cache, config->marco_size, config->cache_x_proc);
 }
 
 void crearServidor(){
@@ -184,5 +186,6 @@ void terminate() {
 	socket_close(skServidor);
 	free(config);
 	free(memory.main);
+	cache_destroy();
 	puts("Proceso Memoria finalizado con éxito");
 }
