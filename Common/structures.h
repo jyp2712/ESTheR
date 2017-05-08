@@ -27,7 +27,7 @@ typedef struct {
 
 // Etiqueta AnSISOP
 typedef struct {
-	const char* name;
+	char* name;
 	t_puntero_instruccion PC;
 } t_programTag;
 

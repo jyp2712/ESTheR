@@ -485,6 +485,10 @@ size_t serial_pack_pcb (t_pcb* pcb, unsigned char* buff){
 		tam+= serial_pack(buff+tam, "h", (pcb->indexCode+i)->start);
 		tam+= serial_pack(buff+tam, "h", (pcb->indexCode+i)->offset);
 	}
+	for (int i = 0; i < pcb->tags; i++){
+		tam+= serial_pack(buff+tam, "s", (pcb->indexTag+i)->name);
+		tam+= serial_pack(buff+tam, "h", (pcb->indexTag+i)->PC);
+	}
 
 	return tam;
 }
@@ -516,6 +520,16 @@ void serial_unpack_pcb (t_pcb* pcb, unsigned char* buff){
 		serial_unpack(buff+tam, "h", &(pcb->indexCode+i)->start);
 		tam += 2;
 		serial_unpack(buff+tam, "h", &(pcb->indexCode+i)->offset);
+		tam += 2;
+	}
+	pcb->indexTag = alloc(pcb->tags * sizeof(t_programTag));
+	char tag[20];
+	for (int i = 0; i < pcb->tags; i++){
+		serial_unpack(buff+tam, "20s", &tag);
+		tam += strlen (tag) + 2;
+		pcb->indexTag[i].name = string_duplicate(tag);
+		strcpy((pcb->indexTag+i)->name, tag);
+		serial_unpack(buff+tam, "h", &(pcb->indexTag+i)->PC);
 		tam += 2;
 	}
 
