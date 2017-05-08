@@ -73,8 +73,9 @@ int recibirMensajesDeKernel(){
 	packet_t packet = protocol_packet_receive(kernel_fd);
 	if(packet.header.opcode == OP_KE_SENDINGDATA){
 		pcbActual = alloc(sizeof(t_pcb));
-		serial_unpack(packet.payload, "hh", &pcbActual->idProcess, &pcbActual->pagesCode);
-		ejecutarPrograma();
+		serial_unpack_pcb (pcbActual, packet.payload);
+
+		/*ejecutarPrograma();*/
 		return true;
 	}
 	else{

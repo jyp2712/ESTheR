@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include "log.h"
+#include "structures.h"
 
 // macros for packing floats and doubles:
 #define pack754_16(f) (pack754((f), 16, 5))
@@ -467,3 +468,56 @@ void serial_unpack(unsigned char *buf, char *format, ...)
 
 	va_end(ap);
 }
+
+size_t serial_pack_pcb (t_pcb* pcb, unsigned char* buff){
+	int tam = 0;
+
+	tam+= serial_pack(buff+tam, "h", pcb->idProcess);
+	tam+= serial_pack(buff+tam, "h", pcb->PC);
+	tam+= serial_pack(buff+tam, "h", pcb->quantum);
+	tam+= serial_pack(buff+tam, "h", pcb->status);
+	tam+= serial_pack(buff+tam, "h", pcb->pagesCode);
+	tam+= serial_pack(buff+tam, "h", pcb->instructions);
+	tam+= serial_pack(buff+tam, "h", pcb->tags);
+	tam+= serial_pack(buff+tam, "h", pcb->stackPointer);
+	tam+= serial_pack(buff+tam, "h", pcb->exitCode);
+	for (int i = 0; i < pcb->instructions; i++){
+		tam+= serial_pack(buff+tam, "h", (pcb->indexCode+i)->start);
+		tam+= serial_pack(buff+tam, "h", (pcb->indexCode+i)->offset);
+	}
+
+	return tam;
+}
+
+void serial_unpack_pcb (t_pcb* pcb, unsigned char* buff){
+	int tam = 0;
+
+	serial_unpack(buff+tam, "h", &pcb->idProcess);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->PC);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->quantum);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->status);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->pagesCode);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->instructions);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->tags);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->stackPointer);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &pcb->exitCode);
+	tam += 2;
+
+	pcb->indexCode = alloc(pcb->instructions * sizeof(t_intructions));
+	for (int i = 0; i < pcb->instructions; i++){
+		serial_unpack(buff+tam, "h", &(pcb->indexCode+i)->start);
+		tam += 2;
+		serial_unpack(buff+tam, "h", &(pcb->indexCode+i)->offset);
+		tam += 2;
+	}
+
+}
+

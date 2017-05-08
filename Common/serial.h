@@ -1,5 +1,7 @@
 #ifndef serial_h
 #define serial_h
+#include "structures.h"
+#include "utils.h"
 
 /*
  * Tabla de referencia para el formato de serialización
@@ -19,11 +21,13 @@
  * @return Tamaño de los datos serializados.
  */
 size_t serial_pack(unsigned char *buf, char *format, ...);
+size_t serial_pack_pcb (t_pcb*, unsigned char*);
 
 /*
  * Deserializa datos según el formato especificado.
  * @param buf Búfer de datos serializados.
  */
 void serial_unpack(unsigned char *buf, char *format, ...);
+void serial_unpack_pcb (t_pcb*, unsigned char*);
 
 #endif /* serial_h */

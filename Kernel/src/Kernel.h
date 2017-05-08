@@ -34,6 +34,8 @@ typedef struct{
 	int stack_size;
 }t_kernel;
 
+t_kernel* kernel;
+
 void leerConfiguracionKernel(t_kernel*, char* path);
 
 t_pcb* crear_pcb_proceso (t_metadata_program*);

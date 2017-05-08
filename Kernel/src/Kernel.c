@@ -20,7 +20,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-void init_server(t_kernel* kernel, socket_t mem_fd, socket_t fs_fd) {
+void init_server(socket_t mem_fd, socket_t fs_fd) {
 	t_list* pcb_list = list_create();
 
 	fdset_t read_fds, all_fds = socket_set_create();
@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
 	set_current_process(KERNEL);
 	title("KERNEL");
 
-	t_kernel* kernel = malloc(sizeof(t_kernel));
+	kernel = malloc(sizeof(t_kernel));
 	leerConfiguracionKernel(kernel, argv[1]);
 	
 	title("Conexión");
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
 	thread_create(terminal);
 
-	init_server(kernel, memoria_fd, fs_fd);
+	init_server(memoria_fd, fs_fd);
 
 	free(kernel);
 	return 0;
@@ -163,17 +163,18 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 	element->PC = program->instruccion_inicio;
 	element->status = NEW;
 	element->pagesCode = 0;
+	element->quantum = kernel->quantum;
 	element->instructions = program->instrucciones_size;
 	element->indexCode = program->instrucciones_serializado;
 
-	const int NUM_TAGS = program->cantidad_de_etiquetas + program->cantidad_de_funciones;
-	element->indexTag = alloc(NUM_TAGS * sizeof(t_programTag));
+	element->tags = program->cantidad_de_etiquetas + program->cantidad_de_funciones;
+	element->indexTag = alloc(element->tags * sizeof(t_programTag));
 
 	char tag[LINE_SIZE];
 	char *p = tag, *q = program->etiquetas;
 	int numtag = 0;
 
-	while(numtag < NUM_TAGS) {
+	while(numtag < element->tags) {
 		*p++ = *q++;
 		if(*(p-1) != '\0') continue;
 		element->indexTag[numtag].name = string_duplicate(tag);
@@ -183,8 +184,8 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 		numtag++;
 	}
 
-	element->indexStack = list_create();
 	element->stackPointer = 0;
+	element->indexStack = list_create();
 	element->exitCode = 0;
 
 	return element;
@@ -205,9 +206,9 @@ void gestion_datos_pcb(char* buffer, socket_t cli_socket, socket_t server_socket
 	/*packet = protocol_packet_receive(server_socket);
 	 *
 	if (packet.header.usrpid == ACCEPT){*/
-
+		pcb->pagesCode++;
 		header_t header_pcb = protocol_header (OP_KE_SENDINGDATA);
-		header_pcb.msgsize = serial_pack (buff, "hh", pcb->idProcess, pcb->pagesCode);
+		header_pcb.msgsize = serial_pack_pcb (pcb, buff);
 		packet_t packet_pcb = protocol_packet (header_pcb, buff);
 
 		/*protocol_packet_send(packet_pcb, server_socket);*/
