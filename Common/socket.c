@@ -195,6 +195,8 @@ void socket_set_add(socket_t fd, fdset_t *fds) {
 
 void socket_close(socket_t sockfd) {
 	shutdown(sockfd, SHUT_RDWR);
-	fdcheck(close(sockfd));
-	log_inform("Socket %d closed", sockfd);
+	int res = close(sockfd);
+	if(res != 1) {
+		log_inform("Socket %d closed", sockfd);
+	}
 }

@@ -12,14 +12,14 @@
 #include <commons/config.h>
 
 typedef struct{
-	char* puerto;
+	int puerto;
 	int marcos;
 	int marco_size;
 	int entradas_cache;
 	int cache_x_proc;
 	int retardo_memoria;
-}t_memoria;
+} t_memoria;
 
-void leerConfiguracion(t_memoria* config, char* path);
+t_memoria *get_config(const char* path);
 
 #endif /* CONFIGURACION_H_ */

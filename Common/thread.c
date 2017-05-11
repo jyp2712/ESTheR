@@ -28,3 +28,17 @@ void thread_kill(thread_t thread) {
 	pthread_kill(thread, SIGTERM);
 	pthread_join(thread, NULL);
 }
+
+mutex_t thread_mutex() {
+	mutex_t mutex;
+	ptcheck(pthread_mutex_init(&mutex, NULL));
+	return mutex;
+}
+
+void thread_mutex_lock(mutex_t *mutex) {
+	ptcheck(pthread_mutex_lock(mutex));
+}
+
+void thread_mutex_unlock(mutex_t *mutex) {
+	ptcheck(pthread_mutex_unlock(mutex));
+}

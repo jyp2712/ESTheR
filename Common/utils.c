@@ -98,3 +98,12 @@ int strtoi(string text) {
 	int res = (int) strtol(text, &p, 10);
 	return *p == '\0' ? res : -1;
 }
+
+bool is_empty(string text) {
+	if(text == NULL) return true;
+	char *str = string_duplicate(text);
+	string_trim(&str);
+	bool empty = string_is_empty(str);
+	free(str);
+	return empty;
+}

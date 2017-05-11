@@ -10,18 +10,14 @@
 
 #include "socket.h"
 
-void inicializar(void);
+unsigned memory_get_access_time();
 
-void crearServidor(void);
+void memory_set_access_time(unsigned delay);
 
-void procesarCliente(void *arg);
+unsigned memory_get_frame_number();
 
-void quitarConexion(socket_t sockfd, char *msg);
+size_t memory_get_frame_size();
 
-void interpreteDeComandos(void);
-
-char* buscarProximaInstruccion();
-
-void terminate(void);
+void memory_flush_cache();
 
 #endif /* MEMORIA_H_ */

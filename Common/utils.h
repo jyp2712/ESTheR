@@ -97,4 +97,11 @@ void title(string text);
  */
 int strtoi(string text);
 
+/**
+ * Verifica si una cadena de caracteres está vacía.
+ * @param Texto a verificar.
+ * @return Valor lógico devuelto.
+ */
+bool is_empty(string text);
+
 #endif /* utils_h */

@@ -11,181 +11,66 @@
 #include "serial.h"
 #include "structures.h"
 #include "cache.h"
-
-#define CANT_CLIENTES 100
+#include "server.h"
+#include "console.h"
 
 t_memoria *config;
-thread_t thServidor;
-socket_t skServidor;
-
-char command[BUFFER_CAPACITY];
 
 // Estado global de la Memoria
 struct {
-	byte *main; 	// Puntero a la memoria principal
-	unsigned delay; // Retardo de acceso en milisegundos
+	byte *main; 	  // Puntero a la memoria principal
+	unsigned delay;   // Retardo de acceso en milisegundos
+	unsigned nframes; // Cantidad de marcos
+	size_t sframe;    // Tamaño de cada marco
 } memory;
 
-bool kernelConectado = false;
-
-int main(int argc, char **argv) {
-    set_current_process(MEMORY);
-    title("MEMORIA");
-
-	guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-
-	config = malloc(sizeof(t_memoria));
-	leerConfiguracion(config, argv[1]);
-
-	//inicializar memoria
-	inicializar();
-
-	//crear hilo servidor
-	thServidor = thread_create(crearServidor);
-
-	//crear interprete
-	interpreteDeComandos();
-
-	//liberar memoria y terminar
-	terminate();
-	return EXIT_SUCCESS;
-}
-
-void inicializar(){
+void init() {
 	memory.main = alloc(config->marco_size * sizeof(byte));
 	memory.delay = config->retardo_memoria;
+	memory.nframes = config->marcos;
+	memory.sframe = config->marco_size;
 	cache_create(config->entradas_cache, config->marco_size, config->cache_x_proc);
-}
-
-void crearServidor(){
-	thread_t thClientes[CANT_CLIENTES];
-	int thClientesIndice = 0;
-
-	socket_t skServidor = socket_init(NULL, config->puerto);
-	socket_t cli_sock;
-	//socket clientes en una lista o array dinamico
-	while((cli_sock = socket_accept(skServidor)) != -1) {
-		//crear thread hijo
-		thClientes[thClientesIndice++] = thread_create(procesarCliente, &cli_sock);
-
-		if(thClientesIndice >= CANT_CLIENTES) {
-			quit("Demasiadas conexiones");
-		}
-	}
-
-//	hacer join de los threads hijos
-	for(int i = 0; i < thClientesIndice; i++) {
-		thread_kill(thClientes[i]);
-	}
-}
-
-void procesarCliente(void *arg) {
-	socket_t sockfd = *(socket_t*)arg;
-	process_t ptype = protocol_handshake_receive(sockfd);
-
-	if(ptype == KERNEL) {
-		if(kernelConectado){
-			quitarConexion(sockfd, "Kernel already connected");
-			return;
-		}
-		kernelConectado = true;
-	}
-
-	while(true) {
-		packet_t packet = protocol_packet_receive(sockfd);
-		if(packet.header.opcode == OP_UNDEFINED) {
-			quitarConexion(sockfd, "Error on client connection");
-			return;
-		}
-
-		header_t header;
-		int tamanioPag = 10; //Harcodeada, deberiamos levantarla del archivo de config, no entendi si era el MARCO_SIZE u otra cosa
-		unsigned char buff[BUFFER_CAPACITY];
-		t_solicitudLectura* direccionInstruccion;
-
-		switch(packet.header.opcode){
-		case OP_ME_INIPRO:
-			break;
-		case OP_ME_SOLBYTPAG:
-			break;
-		case OP_ME_ALMBYTPAG:
-			break;
-		case OP_ME_ASIPAGPRO:
-			break;
-		case OP_ME_FINPRO:
-			break;
-		case OP_CPU_TAMPAG_REQUEST:
-			header = protocol_header (OP_CPU_TAMPAG_REQUEST);
-			header.msgsize = serial_pack(buff, "h", tamanioPag);
-			packet_t packet = protocol_packet (header, buff);
-			protocol_packet_send(packet, sockfd);
-			break;
-		case OP_CPU_PROX_INST_REQUEST:
-
-			//Recibo pagina, offset de inicio y tamaño de lo que tengo que leer y enviar
-			direccionInstruccion = alloc(sizeof(t_solicitudLectura));
-			serial_unpack(buff, "hhhh", &direccionInstruccion->idProcess ,&direccionInstruccion->page, &direccionInstruccion->offset, &direccionInstruccion->size);
-
-			//Validar si se puede acceder a esa direccion y responder con Ok o Fail (mirar como esta en CPU)
-			header = protocol_header (OP_ME_PROX_INST_REQUEST_OK);
-			header.msgsize = serial_pack(buff, "s", buscarProximaInstruccion(direccionInstruccion));
-			packet_t packet2 = protocol_packet (header, buff);
-			protocol_packet_send(packet2, sockfd);
-			break;
-		default:
-			quitarConexion(sockfd, "Invalid operation");
-			return;
-		}
-	}
-}
-
-char* buscarProximaInstruccion(t_solicitudLectura direccionInstruccion){
-
-	//TODO metodo de busqueda de proxima instruccion en el index code
-
-	return "variables a, b";
-}
-
-void quitarConexion(socket_t sockfd, char *msg) {
-	log_inform(msg);
-	socket_close(sockfd);
-}
-
-void set_delay(string delaystr) {
-	int delayint;
-	if(delaystr == NULL) {
-		printf("%u ms\n", memory.delay);
-	} else if((delayint = strtoi(delaystr)) != -1) {
-		memory.delay = delayint;
-	}
-}
-
-void interpreteDeComandos() {
-	title("Consola");
-	while(true) {
-		char *argument = input(command);
-		if(streq(command, "fin")) return;
-
-		if(streq(command, "?")) {
-			printf("Comandos disponibles:\n");
-			printf(" delay\n   Cambia o muestra el retardo de acceso a memoria\n");
-			printf(" fin\n   Finaliza la terminal\n");
-			printf(" dump\n   Dump de la memoria\n");
-		} else if(streq(command, "delay")) {
-			set_delay(argument);
-		} else if(streq(command, "dump")) {
-			printf("Dump...\n");
-		} else {
-			puts("Comando no reconocido. Escriba '?' para ayuda.");
-		}
-	}
+	server_start(config->puerto);
 }
 
 void terminate() {
-	thread_kill(thServidor);
-	socket_close(skServidor);
+	server_end();
+	cache_destroy();
 	free(config);
 	free(memory.main);
-	cache_destroy();
 	puts("Proceso Memoria finalizado con éxito");
+}
+
+int main(int argc, char **argv) {
+    guard(argc == 2, "Falta indicar ruta de archivo de configuración");
+	config = get_config(argv[1]);
+
+	set_current_process(MEMORY);
+	title("MEMORIA");
+
+	init();
+	console();
+	terminate();
+
+	return EXIT_SUCCESS;
+}
+
+unsigned memory_get_access_time() {
+	return memory.delay;
+}
+
+void memory_set_access_time(unsigned delay) {
+	memory.delay = delay;
+}
+
+unsigned memory_get_frame_number() {
+	return memory.nframes;
+}
+
+size_t memory_get_frame_size() {
+	return memory.sframe;
+}
+
+void memory_flush_cache() {
+	cache_flush();
 }

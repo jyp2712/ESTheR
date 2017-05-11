@@ -5,6 +5,7 @@
 #include <signal.h>
 
 typedef pthread_t thread_t;
+typedef pthread_mutex_t mutex_t;
 
 /**
  * Crea un hilo de usuario usando la librería de hilos POSIX.
@@ -30,5 +31,23 @@ void _thread_signal_set(int signal, void (*routine)(int));
  * @param thread Hilo que se va a cancelar.
  */
 void thread_kill(thread_t thread);
+
+/**
+ * Crea un semáforo de exclusión mutua (mutex).
+ * @return Semáforo mutex.
+ */
+mutex_t thread_mutex(void);
+
+/**
+ * Bloquea un semáforo de exclusión mutua.
+ * @param mutex Semáforo a bloquear.
+ */
+void thread_mutex_lock(mutex_t *mutex);
+
+/**
+ * Desbloquea un semáforo de exclusión mutua.
+ * @param mutex Semáforo a desbloquear.
+ */
+void thread_mutex_unlock(mutex_t *mutex);
 
 #endif /* thread_h */
