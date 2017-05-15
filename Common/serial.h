@@ -21,10 +21,22 @@
  * @return Tamaño de los datos serializados.
  */
 size_t serial_pack(unsigned char *buf, char *format, ...);
-size_t serial_pack_pcb (t_pcb*, unsigned char*);
+
+
+/*Serialización del pcb.
+ *
+ * pcb : El puntero al pcb que se quiere serializar.
+ * buff : El buffer donde se almacenaran los datos del pcb.
+ */
+size_t serial_pack_pcb (t_pcb* pcb, unsigned char* buff);
+
+/*Serializa las entradas del stack en una char*.
+ *
+ * stack  : El stack que se quiere serializar.
+ * buff : El buffer donde se quiere almacenar el stack serializado.
+ */
 size_t serial_pack_stack (t_list* stack, unsigned char* buff);
 size_t serial_pack_vars (t_list* lista, unsigned char* buff);
-size_t serial_pack_retPos (t_list* lista, unsigned char* buff);
 
 
 /*
@@ -32,9 +44,20 @@ size_t serial_pack_retPos (t_list* lista, unsigned char* buff);
  * @param buf Búfer de datos serializados.
  */
 void serial_unpack(unsigned char *buf, char *format, ...);
-void serial_unpack_pcb (t_pcb*, unsigned char*);
+
+/*Deserializa el pcb.
+ *
+ * pcb : El puntero al pcb que se habra deserializado.
+ * buff : El buffer donde estaran almacenados los datos del pcb.
+ */
+void serial_unpack_pcb (t_pcb* pcb, unsigned char* buff);
+
+/*Deserializa un t_stack de un conjunto de bytes.
+ *
+ * stack    : Donde el stack se almacenara.
+ * stack : Conjunto de datos serializados.
+ */
 void serial_unpack_stack (t_list* stack, unsigned char* buff);
 size_t serial_unpack_vars (t_list* lista, unsigned char* buff);
-size_t serial_unpack_retPos (t_list* lista, unsigned char* buff);
 
 #endif /* serial_h */
