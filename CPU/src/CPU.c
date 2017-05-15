@@ -174,11 +174,11 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 
 		log_inform("Defino nuevo variable '%c'", identificador_variable);
 		t_var* nuevaVar = malloc(sizeof(t_var));
-		t_stack* lineaStack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count -1);
+		t_stack* lineaStack = list_get(pcbActual->stack, pcbActual->stack->elements_count -1);
 
 		if(lineaStack == NULL){ // si no hay registros, creo uno nuevo
 			lineaStack = t_stack_create();
-			list_add(pcbActual->indexStack, lineaStack);
+			list_add(pcbActual->stack, lineaStack);
 		}
 
 		nuevaVar->id = identificador_variable;
@@ -196,18 +196,18 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 
 		log_inform("Defino nuevo argumento '%c'", identificador_variable);
 		t_var* nuevoArg = malloc(sizeof(t_var));
-		t_stack* lineaStack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count - 1);
+		t_stack* lineaStack = list_get(pcbActual->stack, pcbActual->stack->elements_count - 1);
 
 		if(lineaStack == NULL){ // si no hay registros, creo uno nuevo
 			lineaStack = t_stack_create();
 			lineaStack->retPos = pcbActual->PC; // se crea en -1
-			list_add(pcbActual->indexStack, lineaStack);
+			list_add(pcbActual->stack, lineaStack);
 		}
 
 		nuevoArg->mempos.page = pcbActual->stackPointer / tamanioPagina; // + pcbActual->pagesCode
 		nuevoArg->mempos.offset = pcbActual->stackPointer % tamanioPagina;
 		nuevoArg->mempos.size = sizeof(int);
-		list_add(lineaStack->args, nuevoArg);
+		/*list_add(lineaStack->args, nuevoArg);*/
 		pcbActual->stackPointer += sizeof(int);
 
 		log_inform("Posicion relativa de %c -> %d %d %d", identificador_variable, nuevoArg->mempos.page, nuevoArg->mempos.offset, nuevoArg->mempos.size);
@@ -227,12 +227,12 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable){
 	t_var* argumento;
 	t_puntero posicion;
 
-	if(pcbActual->indexStack->elements_count == 0){
+	if(pcbActual->stack->elements_count == 0){
 		log_report("No hay nada en el indice de stack");
 		return EXIT_FAILURE;
 	}
 	else{
-		entradaStack = list_get(pcbActual->indexStack, pcbActual->indexStack->elements_count - 1);
+		entradaStack = list_get(pcbActual->stack, pcbActual->stack->elements_count - 1);
 
 		if(!esArgumento(identificador_variable)){ // es una variable
 			for(i=0; i < entradaStack->vars->elements_count; i++){

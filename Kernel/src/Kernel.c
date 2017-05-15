@@ -185,7 +185,8 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 	}
 
 	element->stackPointer = 0;
-	element->indexStack = list_create();
+	element->stack = list_create();
+
 	element->exitCode = 0;
 
 	return element;

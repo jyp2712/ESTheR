@@ -16,13 +16,12 @@ typedef struct {
 	int page;
 	int offset;
 	int size;
-}t_indexCode;
-
+}t_mempos;
 
 // Variable AnSISOP
 typedef struct {
 	char id;
-	t_indexCode mempos;
+	t_mempos mempos;
 }t_var;
 
 // Etiqueta AnSISOP
@@ -33,11 +32,10 @@ typedef struct {
 
 // Elemento del Índice de Stack (en definitiva una función)
 typedef struct{
-	int pos;
 	t_list* args;
 	t_list* vars;
 	int retPos;					// Numero de instruccion a la que debe retornar.
-	t_indexCode retVar;			// Posición de memoria donde almacenar la variable de retorno.
+	t_mempos retVar;			// Posición de memoria donde almacenar la variable de retorno.
 }t_stack;
 
 // PCB de un proceso
@@ -51,7 +49,7 @@ typedef struct {
 	int instructions;			// Cantidad de instrucciones del programa
 	t_programTag* indexTag;		// Array con todas las etiquetas del programa.
 	int tags;					// Cantidad de etiquetas del programa
-	t_list* indexStack;			// Lista con los elementos de la pila de usuario del programa.
+	t_list* stack;			// Lista con los elementos de la pila de usuario del programa.
 	int stackPointer;					// Cantidad de etiquetas del programa
 	int exitCode;				// Código de retorno del programa.
 } t_pcb;
