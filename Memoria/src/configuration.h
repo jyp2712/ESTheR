@@ -13,6 +13,9 @@ typedef struct{
 	int retardo_memoria;
 } t_memoria;
 
+typedef int t_page_detail[2]; //pid, nro paging
+typedef t_page_detail t_pages[];
+
 t_memoria *get_config(const char* path);
 
 #endif

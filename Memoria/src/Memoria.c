@@ -15,6 +15,7 @@
 #include "console.h"
 
 t_memoria *config;
+t_pages *pagestable;
 
 // Estado global de la Memoria
 struct {
@@ -29,6 +30,9 @@ void init() {
 	memory.delay = config->retardo_memoria;
 	memory.nframes = config->marcos;
 	memory.sframe = config->marco_size;
+
+	pagestable = alloc(config->marcos * sizeof(t_page_detail));
+
 	cache_create(config->entradas_cache, config->marco_size, config->cache_x_proc);
 	server_start(config->puerto);
 }
@@ -38,6 +42,7 @@ void terminate() {
 	cache_destroy();
 	free(config);
 	free(memory.main);
+	free(pagestable);
 	puts("Proceso Memoria finalizado con éxito");
 }
 

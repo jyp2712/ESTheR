@@ -37,13 +37,22 @@ void cli_thread(client_t *client) {
 	client->type = protocol_handshake_receive(client->socket);
 	unsigned char buffer[BUFFER_CAPACITY];
 
+	//Luego del handshake se indica al Kernel el tamaño del marco de página
+	if(client->type == KERNEL) {
+		serial_pack(buffer, "h", memory_get_frame_size());
+		protocol_packet_send(buffer, client->socket);
+	}
+
 	while(true) {
 		packet_t packet = protocol_packet_receive(client->socket);
 		if(!server.active) return;
 
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
+		{
+			;
 			break;
+		}
 		case OP_ME_SOLBYTPAG:
 			break;
 		case OP_ME_ALMBYTPAG:
@@ -53,13 +62,17 @@ void cli_thread(client_t *client) {
 		case OP_ME_FINPRO:
 			break;
 		case OP_CPU_TAMPAG_REQUEST:
-			{ header_t header = protocol_header(OP_CPU_TAMPAG_REQUEST);
+		{
+			header_t header = protocol_header(OP_CPU_TAMPAG_REQUEST);
 			header.msgsize = serial_pack(buffer, "h", memory_get_frame_size());
+
 			packet_t packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
-			break; }
+			break;
+		}
 		case OP_CPU_PROX_INST_REQUEST:
-			{ t_solicitudLectura* direccionInstruccion;
+		{
+			t_solicitudLectura* direccionInstruccion;
 			// Recibo pagina, offset de inicio y tamaño de lo que tengo que leer y enviar
 			direccionInstruccion = alloc(sizeof(t_solicitudLectura));
 			serial_unpack(buffer, "hhhh", &direccionInstruccion->idProcess ,&direccionInstruccion->page, &direccionInstruccion->offset, &direccionInstruccion->size);
@@ -69,7 +82,8 @@ void cli_thread(client_t *client) {
 			header.msgsize = serial_pack(buffer, "s", "variables a, b");
 			packet_t packet2 = protocol_packet (header, buffer);
 			protocol_packet_send(packet2, client->socket);
-			break; }
+			break;
+		}
 		case OP_UNDEFINED:
 		default:
 			remove_client(client);
