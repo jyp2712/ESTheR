@@ -25,7 +25,7 @@ struct {
 } memory;
 
 void init() {
-	memory.main = alloc(config->marco_size * sizeof(byte));
+	memory.main = alloc(config->marcos * config->marco_size * sizeof(byte));
 	memory.delay = config->retardo_memoria;
 	memory.nframes = config->marcos;
 	memory.sframe = config->marco_size;
