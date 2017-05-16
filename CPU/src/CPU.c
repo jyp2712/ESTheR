@@ -310,7 +310,7 @@ void finalizar(void){
 	}
 	list_destroy(contexto->args);
 	list_destroy(contexto->vars);
-	free(contexto->retVar);
+
 	if(list_size(pcbActual->stack) == 0){
 		finPrograma = true;
 		log_inform("Finalizó la ejecucion del programa.");
