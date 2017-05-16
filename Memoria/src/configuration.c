@@ -1,11 +1,5 @@
-/*
- * Config.c
- *
- *  Created on: 24/4/2017
- *      Author: utnso
- */
 #include <commons/config.h>
-#include "Configuracion.h"
+#include "configuration.h"
 
 t_memoria *get_config(const char *path) {
 	t_config* c = config_create((char *)path);

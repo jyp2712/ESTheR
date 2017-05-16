@@ -1,12 +1,5 @@
-/*
- * Config.h
- *
- *  Created on: 24/4/2017
- *      Author: utnso
- */
-
-#ifndef CONFIGURACION_H_
-#define CONFIGURACION_H_
+#ifndef CONFIGURATION_H_
+#define CONFIGURATION_H_
 
 #include "Memoria.h"
 #include <commons/config.h>
@@ -22,4 +15,4 @@ typedef struct{
 
 t_memoria *get_config(const char* path);
 
-#endif /* CONFIGURACION_H_ */
+#endif

@@ -4,25 +4,25 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/Configuracion.c \
 ../src/Memoria.c \
 ../src/cache.c \
+../src/configuration.c \
 ../src/console.c \
 ../src/operations.c \
 ../src/server.c 
 
 OBJS += \
-./src/Configuracion.o \
 ./src/Memoria.o \
 ./src/cache.o \
+./src/configuration.o \
 ./src/console.o \
 ./src/operations.o \
 ./src/server.o 
 
 C_DEPS += \
-./src/Configuracion.d \
 ./src/Memoria.d \
 ./src/cache.d \
+./src/configuration.d \
 ./src/console.d \
 ./src/operations.d \
 ./src/server.d 

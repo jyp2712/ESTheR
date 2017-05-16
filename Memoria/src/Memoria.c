@@ -6,7 +6,7 @@
 #include "socket.h"
 #include "protocol.h"
 #include "thread.h"
-#include "Configuracion.h"
+#include "configuration.h"
 #include "operations.h"
 #include "serial.h"
 #include "structures.h"
