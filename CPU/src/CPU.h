@@ -23,6 +23,7 @@ typedef struct{
 }t_cpu;
 
 bool huboStackOver = false;
+bool finPrograma = false;
 char proximaInstruccion[BUFFER_CAPACITY];
 int tamanioPagina;
 int memoria_fd;

@@ -284,9 +284,41 @@ void llamarSinRetorno(t_nombre_etiqueta etiqueta){
 
 }
 
+void irAlLabel(t_nombre_etiqueta etiqueta){
+		log_inform("Ir a label %s", etiqueta);
+		t_puntero_instruccion numeroInstr = metadata_buscar_etiqueta(etiqueta, pcbActual->indexTag, pcbActual->tags);
+		log_inform("Instruccion del irALAbel: %d", numeroInstr);
+		if(numeroInstr == -1){
+			log_report("No se encontro la etiqueta");
+			return;
+		}
+		pcbActual->PC = numeroInstr - 1; //revisar despues
+}
+
 void finalizar(void){
 
-	log_inform("Finalizar");
+	log_inform("ANSISOP_finalizar");
+	// Obtengo contexto quitado de la lista y lo limpio.
+	t_stack* contexto = list_remove(pcbActual->stack, list_size(pcbActual->stack) - 1);
+	int i = list_size(contexto->args) + list_size(contexto->vars);
+	pcbActual->stackPointer-= sizeof(int)*i; // Disminuyo stackPointer del pcb
+	for(i = 0; i < list_size(contexto->args); i++){ // Limpio lista de argumentos del contexto
+		free(list_remove(contexto->args,i));
+	}
+	for(i = 0; i < list_size(contexto->vars); i++){ // Limpio lista de variables del contexto
+		free(list_remove(contexto->vars, i));
+	}
+	list_destroy(contexto->args);
+	list_destroy(contexto->vars);
+	free(contexto->retVar);
+	if(list_size(pcbActual->stack) == 0){
+		finPrograma = true;
+		log_inform("Finalizó la ejecucion del programa.");
+	}else{
+		pcbActual->PC = contexto->retPos;
+	}
+	free(contexto);
+	return;
 
 }
 
