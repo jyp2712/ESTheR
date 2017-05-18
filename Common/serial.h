@@ -21,6 +21,7 @@
  * @return Tamaño de los datos serializados.
  */
 size_t serial_pack(unsigned char *buf, char *format, ...);
+size_t serial_pack_va(unsigned char *buf, char *format, va_list ap);
 
 
 /*Serialización del pcb.

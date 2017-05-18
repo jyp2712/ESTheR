@@ -59,6 +59,8 @@ header_t protocol_header(unsigned char opcode, unsigned long msgsize);
  */
 packet_t protocol_packet(header_t header, ...);
 
+void protocol_response(socket_t sockfd, char *format, ...);
+
 /**
  * Envía un packete a un determinado socket.
  * @param packet Paquete.

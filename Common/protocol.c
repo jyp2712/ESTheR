@@ -46,6 +46,18 @@ packet_t protocol_packet(header_t header, ...) {
 	return packet;
 }
 
+void protocol_response(socket_t sockfd, char *format, ...) {
+	unsigned char buffer[1024];
+
+	va_list ap;
+	va_start(ap, format);
+
+	size_t s = serial_pack_va(buffer, format, ap);
+	socket_send_bytes(buffer, s, sockfd);
+	log_inform("Sent response packet (%ld bytes)", s);
+}
+
+
 void protocol_packet_send(packet_t packet, socket_t sockfd) {
 	send_header(packet.header, sockfd);
 	socket_send_bytes(packet.payload, packet.header.msgsize, sockfd);

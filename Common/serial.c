@@ -209,11 +209,15 @@ unsigned long long int unpacku64(unsigned char *buf)
  **
  **  (16-bit unsigned length is automatically prepended to strings)
  */
-
 size_t serial_pack(unsigned char *buf, char *format, ...)
 {
 	va_list ap;
+	va_start(ap, format);
+	return serial_pack_va(buf, format, ap);
+}
 
+size_t serial_pack_va(unsigned char *buf, char *format, va_list ap)
+{
 	signed char c;              // 8-bit
 	unsigned char C;
 
@@ -235,8 +239,6 @@ size_t serial_pack(unsigned char *buf, char *format, ...)
 	unsigned int len;
 
 	size_t size = 0;
-
-	va_start(ap, format);
 
 	for(; *format != '\0'; format++) {
 		switch(*format) {

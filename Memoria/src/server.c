@@ -40,17 +40,16 @@ void cli_thread(client_t *client) {
 
 	//Luego del handshake se indica al Kernel el tamaño del marco de página
 	if(client->type == KERNEL) {
-		size_t s = serial_pack(buffer, "h", memory_get_frame_size());
-		socket_send_bytes(buffer, s, client->socket);
-		log_inform("Sent init data memory (%d bytes)", s);
+		protocol_response(client->socket, "h", memory_get_frame_size());
+		//size_t s = serial_pack(buffer, "h", memory_get_frame_size());
+		//socket_send_bytes(buffer, s, client->socket);
+		//log_inform("Sent init data memory (%d bytes)", s);
 	}
 
 	while(true) {
 		packet_t packet = protocol_packet_receive(client->socket);
 
-		if(!server.active) {
-			return;
-		}
+		if(!server.active) return;
 
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
