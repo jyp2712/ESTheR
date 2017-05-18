@@ -30,7 +30,7 @@ void remove_client(client_t *client) {
 	bool condition(client_t *element) {
 		return element == client;
 	}
-	mlist_remove(server.clients, condition, free);
+	mlist_remove(server.clients, condition, destroy_client);
 }
 
 void cli_thread(client_t *client) {
@@ -99,12 +99,12 @@ void cli_thread(client_t *client) {
 	}
 }
 
-void *process_signal(int sig, siginfo_t *info, void *ucontext)
-{
-	printf("atiende señal\n");
-	server.active = false;
-	return NULL;
-}
+//void *process_signal(int sig, siginfo_t *info, void *ucontext)
+//{
+//	printf("atiende señal\n");
+//	server.active = false;
+//	return NULL;
+//}
 
 void srv_thread(int port) {
 	//thread_signal_set(SIGTERM, process_signal);
