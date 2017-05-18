@@ -571,7 +571,6 @@ size_t serial_pack_vars (t_list* lista, unsigned char* buff){
 	return tam;
 }
 
-
 void serial_unpack_stack (t_list* stack, unsigned char* buff){
 	int tam = 0;
 	int cant_elements;
@@ -610,3 +609,23 @@ size_t serial_unpack_vars (t_list* lista, unsigned char* buff){
 	return tam;
 }
 
+size_t serial_pack_memreq(t_memreq* memreq, unsigned char* buff){
+	int tam = 0;
+
+	tam += serial_pack(buff+tam, "h", memreq->idProcess);
+	tam += serial_pack(buff+tam, "h", memreq->pages);
+
+	return tam;
+}
+
+size_t serial_unpack_memreq(t_memreq* memreq, unsigned char* buff){
+	int tam = 0;
+	int cant_elements;
+
+	serial_unpack(buff+tam, "h", &memreq->idProcess);
+	tam += 2;
+	serial_unpack(buff+tam, "h", &memreq->pages);
+	tam += 2;
+
+	return tam;
+}

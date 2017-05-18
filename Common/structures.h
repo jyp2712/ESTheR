@@ -7,6 +7,11 @@
 
 #define t_instruction t_intructions
 
+typedef struct {
+	int idProcess;
+	int pages;
+} t_memreq;
+
 /**
  * Estructura para identificar una posición de memoria por medio
  * de tres variables: su número de página (page), su desplazamiento

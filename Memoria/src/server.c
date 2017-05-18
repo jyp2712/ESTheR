@@ -34,23 +34,30 @@ void remove_client(client_t *client) {
 }
 
 void cli_thread(client_t *client) {
-	client->type = protocol_handshake_receive(client->socket);
 	unsigned char buffer[BUFFER_CAPACITY];
+
+	client->type = protocol_handshake_receive(client->socket);
 
 	//Luego del handshake se indica al Kernel el tamaño del marco de página
 	if(client->type == KERNEL) {
-		serial_pack(buffer, "h", memory_get_frame_size());
-		protocol_packet_send(buffer, client->socket);
+		size_t s = serial_pack(buffer, "h", memory_get_frame_size());
+		socket_send_bytes(buffer, s, client->socket);
+		log_inform("Sent init data memory (%d bytes)", s);
 	}
 
 	while(true) {
 		packet_t packet = protocol_packet_receive(client->socket);
-		if(!server.active) return;
+
+		if(!server.active) {
+			return;
+		}
 
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
 		{
-			;
+			t_memreq req;
+			serial_unpack_memreq(&req, packet.payload);
+
 			break;
 		}
 		case OP_ME_SOLBYTPAG:
@@ -92,27 +99,40 @@ void cli_thread(client_t *client) {
 	}
 }
 
-void sv_thread(int port) {
+void *process_signal(int sig, siginfo_t *info, void *ucontext)
+{
+	printf("atiende señal\n");
+	server.active = false;
+	return NULL;
+}
+
+void srv_thread(int port) {
+	//thread_signal_set(SIGTERM, process_signal);
+
 	char *port_str = string_itoa(port);
-	socket_t sv_sock = socket_init(NULL, port_str);
+	socket_t srv_sock = socket_init(NULL, port_str);
 	free(port_str);
+
 	server.clients = mlist_create();
 
 	socket_t cli_sock;
-	while((cli_sock = socket_accept(sv_sock)) != -1) {
-		client_t *client = alloc(sizeof(client_t));
-		client->socket = cli_sock;
-		client->thread = thread_create(cli_thread, client);
-		mlist_append(server.clients, client);
+	while(server.active) {
+		cli_sock = socket_accept(srv_sock);
+		if(cli_sock != -1) {
+			client_t *client = alloc(sizeof(client_t));
+			client->socket = cli_sock;
+			mlist_append(server.clients, client);
+			client->thread = thread_create(cli_thread, client);
+		}
 	}
 
 	mlist_destroy(server.clients, destroy_client);
-	socket_close(sv_sock);
+	socket_close(srv_sock);
 }
 
 void server_start(int port) {
 	server.active = true;
-	server.thread = thread_create(sv_thread, port);
+	server.thread = thread_create(srv_thread, port);
 }
 
 void server_end() {

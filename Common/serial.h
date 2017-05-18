@@ -60,4 +60,7 @@ void serial_unpack_pcb (t_pcb* pcb, unsigned char* buff);
 void serial_unpack_stack (t_list* stack, unsigned char* buff);
 size_t serial_unpack_vars (t_list* lista, unsigned char* buff);
 
+size_t serial_pack_memreq(t_memreq* memreq, unsigned char* buff);
+size_t serial_unpack_memreq(t_memreq* memreq, unsigned char* buff);
+
 #endif /* serial_h */
