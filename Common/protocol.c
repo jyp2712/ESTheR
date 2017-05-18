@@ -55,10 +55,13 @@ void protocol_packet_send(packet_t packet, socket_t sockfd) {
 packet_t protocol_packet_receive(socket_t sockfd) {
 	packet_t packet;
 	packet.header = receive_header(sockfd);
-	packet.payload = malloc(packet.header.msgsize * sizeof(char));
-	socket_receive_bytes(packet.payload, packet.header.msgsize, sockfd);
-	log_inform("Received packet from %s (%ld bytes)",
-			get_process_name(packet.header.syspid), packet.header.msgsize + HEADER_SIZE);
+
+	if(packet.header.opcode != OP_UNDEFINED){
+		packet.payload = malloc(packet.header.msgsize * sizeof(char));
+		socket_receive_bytes(packet.payload, packet.header.msgsize, sockfd);
+		log_inform("Received packet from %s (%ld bytes)",
+				get_process_name(packet.header.syspid), packet.header.msgsize + HEADER_SIZE);
+	}
 	return packet;
 }
 
