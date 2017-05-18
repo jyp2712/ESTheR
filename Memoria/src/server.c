@@ -30,7 +30,7 @@ void remove_client(client_t *client) {
 	bool condition(client_t *element) {
 		return element == client;
 	}
-	mlist_remove(server.clients, condition, destroy_client);
+	mlist_remove(server.clients, condition, free);
 }
 
 void cli_thread(client_t *client) {

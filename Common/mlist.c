@@ -209,7 +209,10 @@ bool mlist_all(mlist_t *list, void *condition) {
 
 void mlist_clear(mlist_t *list, void *destroyer) {
 	void (*elem_fn)(void*) = destroyer;
+
+	mutex_lock(list);
 	traverse_nodes(list, (void(*)(node_t*)) free, elem_fn, NULL, false);
+	mutex_unlock(list);
 
 	list->head = list->tail = NULL;
 	list->length = 0;
@@ -289,7 +292,6 @@ static node_t *get_node(mlist_t *list, int index) {
 static void traverse_nodes(mlist_t *list, void node_fn(node_t*), void elem_fn(void*),
 		bool cond(void*), bool reversed) {
 	node_t *next, *node = reversed ? list->tail : list->head;
-	mutex_lock(list);
 	while(node != NULL) {
 		next = reversed ? node->prev : node->next;
 		if(cond == NULL || cond(node->elem)) {
@@ -298,7 +300,6 @@ static void traverse_nodes(mlist_t *list, void node_fn(node_t*), void elem_fn(vo
 		}
 		node = next;
 	}
-	mutex_unlock(list);
 }
 
 static void *remove_node(mlist_t *list, node_t *node) {

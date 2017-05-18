@@ -620,7 +620,7 @@ size_t serial_pack_memreq(t_memreq* memreq, unsigned char* buff){
 
 size_t serial_unpack_memreq(t_memreq* memreq, unsigned char* buff){
 	int tam = 0;
-	int cant_elements;
+//	int cant_elements;
 
 	serial_unpack(buff+tam, "h", &memreq->idProcess);
 	tam += 2;
