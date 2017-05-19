@@ -303,7 +303,7 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
     header_t header = protocol_header(OP_KE_SEND_PID);
     header.msgsize = serial_pack(buff, "h", pcb->idProcess);
     packet_t packet = protocol_packet(header, buff);
-    //protocol_packet_send(packet, console_socket);
+    protocol_packet_send(packet, console_socket);
     list_add (pcb_new, pcb);
 
     if ((pcb_ready->elements_count+pcb_exec->elements_count+pcb_block->elements_count) < kernel->grado_multiprog){

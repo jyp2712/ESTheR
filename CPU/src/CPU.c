@@ -71,7 +71,7 @@ void finalizarCPU(){
 
 int recibirMensajesDeKernel(){
 	packet_t packet = protocol_packet_receive(kernel_fd);
-	if(packet.header.opcode == OP_KE_SENDINGDATA){
+	if(packet.header.opcode == OP_KE_SEND_PCB){
 		pcbActual = alloc(sizeof(t_pcb));
 		serial_unpack_pcb (pcbActual, packet.payload);
 
