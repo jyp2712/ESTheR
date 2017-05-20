@@ -9,6 +9,7 @@ C_SRCS += \
 ../src/configuration.c \
 ../src/console.c \
 ../src/operations.c \
+../src/page_table.c \
 ../src/server.c 
 
 OBJS += \
@@ -17,6 +18,7 @@ OBJS += \
 ./src/configuration.o \
 ./src/console.o \
 ./src/operations.o \
+./src/page_table.o \
 ./src/server.o 
 
 C_DEPS += \
@@ -25,6 +27,7 @@ C_DEPS += \
 ./src/configuration.d \
 ./src/console.d \
 ./src/operations.d \
+./src/page_table.d \
 ./src/server.d 
 
 

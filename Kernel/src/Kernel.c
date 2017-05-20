@@ -310,8 +310,8 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
         t_memreq* memreq = alloc (sizeof(memreq));
         memreq->idProcess = pcb->idProcess;
         memreq->pages = numberPages;
-        header_inipro.msgsize = serial_pack_memreq (memreq, buff);
-        packet_t packet_inipro = protocol_packet (header_inipro, buff);
+        //header_inipro.msgsize = serial_pack_memreq (memreq, buff);
+        //packet_t packet_inipro = protocol_packet (header_inipro, buff);
         //protocol_packet_send(packet_inipro, server_socket);
 
         //packet_t response_packet_inipro = protocol_packet_receive(server_socket);

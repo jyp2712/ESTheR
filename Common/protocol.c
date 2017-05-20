@@ -57,7 +57,6 @@ void protocol_response(socket_t sockfd, char *format, ...) {
 	log_inform("Sent response packet (%ld bytes)", s);
 }
 
-
 void protocol_packet_send(packet_t packet, socket_t sockfd) {
 	send_header(packet.header, sockfd);
 	socket_send_bytes(packet.payload, packet.header.msgsize, sockfd);

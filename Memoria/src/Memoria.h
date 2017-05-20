@@ -1,10 +1,3 @@
-/*
- * Memoria.h
- *
- *  Created on: 3/4/2017
- *      Author: utnso
- */
-
 #ifndef MEMORIA_H_
 #define MEMORIA_H_
 

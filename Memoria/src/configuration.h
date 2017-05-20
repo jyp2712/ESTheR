@@ -1,9 +1,11 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#include "Memoria.h"
 #include <commons/config.h>
+#include "Memoria.h"
+#include "page_table.h"
 
+// Configuracion
 typedef struct{
 	int puerto;
 	int marcos;
@@ -13,8 +15,14 @@ typedef struct{
 	int retardo_memoria;
 } t_memoria;
 
-typedef int t_page_detail[2]; //pid, nro paging
-typedef t_page_detail t_pages[];
+// Estado global de la Memoria
+typedef struct {
+	byte *main; 	  		// Puntero a la memoria principal
+	unsigned delay;   		// Retardo de acceso en milisegundos
+	unsigned nframes; 		// Cantidad de marcos
+	size_t sframe;    		// Tamaño de cada marco
+	t_page_table *page_table;		// Tabla de paginas
+} t_memory_data;
 
 t_memoria *get_config(const char* path);
 

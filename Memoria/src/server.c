@@ -7,6 +7,10 @@
 #include "serial.h"
 #include "log.h"
 #include "Memoria.h"
+#include "configuration.h"
+
+t_memoria *config;
+t_memory_data *memory;
 
 struct {
 	thread_t thread;
@@ -40,10 +44,7 @@ void cli_thread(client_t *client) {
 
 	//Luego del handshake se indica al Kernel el tamaño del marco de página
 	if(client->type == KERNEL) {
-		//protocol_response(client->socket, "h", memory_get_frame_size());
-		//size_t s = serial_pack(buffer, "h", memory_get_frame_size());
-		//socket_send_bytes(buffer, s, client->socket);
-		//log_inform("Sent init data memory (%d bytes)", s);
+		protocol_response(client->socket, "h", memory_get_frame_size());
 	}
 
 	while(true) {
@@ -54,9 +55,12 @@ void cli_thread(client_t *client) {
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
 		{
-			t_memreq req;
-			serial_unpack_memreq(&req, packet.payload);
+			int pages;
+			serial_unpack(packet.payload, "H", &pages);
 
+			int res = set_pages(memory->page_table, packet.header.usrpid, pages);
+
+			protocol_response(client->socket, "h", res);
 			break;
 		}
 		case OP_ME_SOLBYTPAG:
@@ -129,9 +133,11 @@ void srv_thread(int port) {
 	socket_close(srv_sock);
 }
 
-void server_start(int port) {
+void server_start(t_memoria *c, t_memory_data *m) {
+	config = c;
+	memory = m;
 	server.active = true;
-	server.thread = thread_create(srv_thread, port);
+	server.thread = thread_create(srv_thread, config->puerto);
 }
 
 void server_end() {

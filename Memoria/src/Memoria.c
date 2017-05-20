@@ -15,26 +15,17 @@
 #include "console.h"
 
 t_memoria *config;
-t_pages *pagestable;
-
-// Estado global de la Memoria
-struct {
-	byte *main; 	  // Puntero a la memoria principal
-	unsigned delay;   // Retardo de acceso en milisegundos
-	unsigned nframes; // Cantidad de marcos
-	size_t sframe;    // Tamaño de cada marco
-} memory;
+t_memory_data memory;
 
 void init() {
 	memory.main = alloc(config->marcos * config->marco_size * sizeof(byte));
 	memory.delay = config->retardo_memoria;
 	memory.nframes = config->marcos;
 	memory.sframe = config->marco_size;
-
-	pagestable = alloc(config->marcos * sizeof(t_page_detail));
+	memory.page_table = get_page_table(config->marcos);
 
 	cache_create(config->entradas_cache, config->marco_size, config->cache_x_proc);
-	server_start(config->puerto);
+	server_start(config, &memory);
 }
 
 void terminate() {
@@ -42,7 +33,7 @@ void terminate() {
 	cache_destroy();
 	free(config);
 	free(memory.main);
-	free(pagestable);
+	free(memory.page_table);
 	puts("Proceso Memoria finalizado con éxito");
 }
 

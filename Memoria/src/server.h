@@ -1,7 +1,9 @@
 #ifndef SERVER_H_
 #define SERVER_H_
 
-void server_start(int port);
+#include "configuration.h"
+
+void server_start(t_memoria *c, t_memory_data *m);
 
 void server_end(void);
 
