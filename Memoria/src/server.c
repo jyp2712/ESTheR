@@ -39,12 +39,17 @@ void remove_client(client_t *client) {
 
 void cli_thread(client_t *client) {
 	unsigned char buffer[BUFFER_CAPACITY];
+	header_t header;
+	packet_t packet;
 
-	client->type = protocol_handshake_receive(client->socket);
+	header = protocol_handshake_receive(client->socket);
+	client->type = header.syspid;
 
 	//Luego del handshake se indica al Kernel el tamaño del marco de página
 	if(client->type == KERNEL) {
-		protocol_response(client->socket, "h", memory_get_frame_size());
+		header = protocol_header_response(header, serial_pack(buffer, "h", memory_get_frame_size()));
+		packet = protocol_packet(header, buffer);
+		protocol_packet_send(packet, client->socket);
 	}
 
 	while(true) {
@@ -60,7 +65,9 @@ void cli_thread(client_t *client) {
 
 			int res = set_pages(memory->page_table, packet.header.usrpid, pages);
 
-			protocol_response(client->socket, "h", res);
+			header = protocol_header_response(header, serial_pack(buffer, "h", res));
+			packet = protocol_packet(header, buffer);
+			protocol_packet_send(packet, client->socket);
 			break;
 		}
 		case OP_ME_SOLBYTPAG:

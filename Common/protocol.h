@@ -7,6 +7,7 @@
 enum opcodes {
 	OP_UNDEFINED,
 	OP_HANDSHAKE,
+	OP_RESPONSE,
 	OP_ME_INIPRO,
 	OP_ME_SOLBYTPAG,
 	OP_ME_ALMBYTPAG,
@@ -40,6 +41,8 @@ typedef struct {
 	unsigned int pagreq;
 } me_progpag_t;
 
+header_t protocol_header_response(header_t header, unsigned long msgsize);
+
 /**
  * Crea el encabezado de un paquete para una enviar una operación.
  * Se completan los campos syspid con el ID del proceso emisor y
@@ -59,8 +62,6 @@ header_t protocol_header(unsigned char opcode, unsigned long msgsize);
  * @return Paquete.
  */
 packet_t protocol_packet(header_t header, ...);
-
-void protocol_response(socket_t sockfd, char *format, ...);
 
 /**
  * Envía un packete a un determinado socket.
@@ -87,6 +88,6 @@ void protocol_handshake_send(socket_t sockfd);
  * @param sockfd Descriptor del socket.
  * @return Tipo de proceso que manda el handshake.
  */
-process_t protocol_handshake_receive(socket_t sockfd);
+header_t protocol_handshake_receive(socket_t sockfd);
 
 #endif /* protocol_h */

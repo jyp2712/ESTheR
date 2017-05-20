@@ -5,6 +5,13 @@
 
 #define HEADER_SIZE 7
 
+header_t protocol_header_response(header_t header, unsigned long msgsize) {
+	header_t h = protocol_header(OP_RESPONSE, msgsize);
+	h.syspid = header.syspid;
+	h.usrpid = header.usrpid;
+	return h;
+}
+
 header_t protocol_header(unsigned char opcode, unsigned long msgsize) {
 	header_t header;
 	memset(&header, 0, sizeof header);
@@ -46,17 +53,6 @@ packet_t protocol_packet(header_t header, ...) {
 	return packet;
 }
 
-void protocol_response(socket_t sockfd, char *format, ...) {
-	unsigned char buffer[1024];
-
-	va_list ap;
-	va_start(ap, format);
-
-	size_t s = serial_pack_va(buffer, format, ap);
-	socket_send_bytes(buffer, s, sockfd);
-	log_inform("Sent response packet (%ld bytes)", s);
-}
-
 void protocol_packet_send(packet_t packet, socket_t sockfd) {
 	send_header(packet.header, sockfd);
 	socket_send_bytes(packet.payload, packet.header.msgsize, sockfd);
@@ -81,12 +77,12 @@ void protocol_handshake_send(socket_t sockfd) {
 	log_inform("Sent handshake");
 }
 
-process_t protocol_handshake_receive(socket_t sockfd) {
+header_t protocol_handshake_receive(socket_t sockfd) {
 	header_t header = receive_header(sockfd);
 	if(header.opcode != OP_HANDSHAKE) {
 		log_report("Received another operation while waiting for handshake");
 	} else {
 		log_inform("Received handshake from %s", get_process_name(header.syspid));
 	}
-	return header.syspid;
+	return header;
 }

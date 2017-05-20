@@ -38,9 +38,9 @@ void terminate() {
 }
 
 int main(int argc, char **argv) {
-    guard(argc == 2, "Falta indicar ruta de archivo de configuración");
-	config = get_config(argv[1]);
-	//config = get_config("metadata");
+    //guard(argc == 2, "Falta indicar ruta de archivo de configuración");
+	//config = get_config(argv[1]);
+	config = get_config("metadata");
 
 	set_current_process(MEMORY);
 	title("MEMORIA");

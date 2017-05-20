@@ -17,7 +17,8 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
             if(!FD_ISSET(i, &read_fds.set)) continue;
             if(i == sv_sock) {
                 socket_t cli_sock = socket_accept(sv_sock);
-                process_t cli_process = protocol_handshake_receive(cli_sock);
+                header_t header = protocol_handshake_receive(cli_sock);
+                process_t cli_process = header.syspid;
                 if(cli_process == CONSOLE) {
                     socket_set_add(cli_sock, &all_fds);
                     t_client* cliente = alloc(sizeof(t_client));

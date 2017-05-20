@@ -355,7 +355,12 @@ size_t serial_pack_va(unsigned char *buf, char *format, va_list ap)
 void serial_unpack(unsigned char *buf, char *format, ...)
 {
 	va_list ap;
+	va_start(ap, format);
+	serial_unpack_va(buf, format, ap);
+}
 
+void serial_unpack_va(unsigned char *buf, char *format, va_list ap)
+{
 	signed char *c;              // 8-bit
 	unsigned char *C;
 
@@ -375,8 +380,6 @@ void serial_unpack(unsigned char *buf, char *format, ...)
 
 	char *s;
 	unsigned int len, maxstrlen=0, count;
-
-	va_start(ap, format);
 
 	for(; *format != '\0'; format++) {
 		switch(*format) {

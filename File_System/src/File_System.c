@@ -13,7 +13,8 @@ int main(int argc, char **argv) {
 
 	socket_t kernel_fd = socket_listen(file_system->puerto);
 
-	process_t ptype = protocol_handshake_receive(kernel_fd);
+	header_t header = protocol_handshake_receive(kernel_fd);
+	process_t ptype = header.syspid;
 	guard(ptype == KERNEL, "Unexpected handshake");
 	puts("Recibido handshake del Kernel");
 
