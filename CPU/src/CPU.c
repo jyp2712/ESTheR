@@ -75,6 +75,10 @@ int recibirMensajesDeKernel(){
 		pcbActual = alloc(sizeof(t_pcb));
 		serial_unpack_pcb (pcbActual, packet.payload);
 
+		for(int i= 0; i < pcbActual->instructions; i++){
+			printf("%d\n%d\n", (pcbActual->indexCode+i)->start, (pcbActual->indexCode+i)->offset);
+		}
+
 		/*ejecutarPrograma();*/
 		return true;
 	}

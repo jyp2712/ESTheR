@@ -60,7 +60,6 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
         }
 }
 
-
 void terminal() {
     title("Consola");
 
@@ -169,7 +168,6 @@ void terminal() {
             }
         }
 }
-
 
 int main(int argc, char **argv) {
     guard(argc == 2, "Falta indicar ruta de archivo de configuración");
@@ -297,7 +295,6 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
 
     t_metadata_program* dataProgram = metadata_desde_literal((char*)program.payload);
     t_pcb* pcb = crear_pcb_proceso(dataProgram);
-    metadata_destruir(dataProgram);
 
     unsigned char buff[BUFFER_CAPACITY];
     header_t header = protocol_header(OP_KE_SEND_PID);
@@ -319,7 +316,7 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
 
         //packet_t response_packet_inipro = protocol_packet_receive(server_socket);
 
-        if (true/*response_packet_inipro.header.opcode == OP_ME_AUTHORIZED*/){
+        if (true /*response_packet_inipro.header.opcode == OP_ME_AUTHORIZED*/){
 
             pcb->pagesCode = numberPages;
             pcb->stackPointer = numberPages - kernel->stack_size;
@@ -341,16 +338,19 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
 }
 
 void planificacion (){
-    int i = 0;
     while (!list_is_empty(pcb_ready) && !list_is_empty(cpu_conectadas)){
         unsigned char buff[BUFFER_CAPACITY];
-        t_pcb* pcbToExec = list_remove(pcb_ready, i);
+        t_pcb* pcbToExec = list_remove(pcb_ready, 0);
+
+        for(int i= 0; i < pcbToExec->instructions; i++){
+        	printf("%d\n%d\n", (pcbToExec->indexCode+i)->start, (pcbToExec->indexCode+i)->offset);
+        }
 
         header_t header_pcb = protocol_header (OP_KE_SEND_PCB);
         header_pcb.msgsize = serial_pack_pcb(pcbToExec, buff);
         packet_t packet_pcb = protocol_packet (header_pcb, buff);
 
-        t_client* cpu = list_remove(cpu_conectadas, i);
+        t_client* cpu = list_remove(cpu_conectadas, 0);
         protocol_packet_send(packet_pcb, cpu->clientID);
 
         list_add(pcb_exec, pcbToExec);
