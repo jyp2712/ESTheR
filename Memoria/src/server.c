@@ -57,6 +57,7 @@ void cli_thread(client_t *client) {
 
 		if(!server.active) return;
 
+		log_report("packet.header syspid %s usrpid %s opcode %s msgsize %s", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
 		{
@@ -71,9 +72,37 @@ void cli_thread(client_t *client) {
 			break;
 		}
 		case OP_ME_SOLBYTPAG:
+		{
+			int page, offset, size;
+			serial_unpack(packet.payload, "HHH", &page, &offset, &size);
+
+			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
+
+			if(!get_bytes(memory->main, frame, offset, size, buffer)) {
+				//TODO falta implementar validaciones de recuperacion de memoria
+			}
+
+			header = protocol_header_response(header, size);
+			packet = protocol_packet(header, buffer);
+			protocol_packet_send(packet, client->socket);
 			break;
+		}
 		case OP_ME_ALMBYTPAG:
+		{
+			int page, offset, size;
+			serial_unpack(packet.payload, "HHHs", &page, &offset, &size, buffer);
+
+			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
+
+			if(!set_bytes(memory->main, frame, offset, size, buffer)) {
+				//TODO falta implementar validaciones de almacenamiento de memoria
+			}
+
+			header = protocol_header_response(header, serial_pack(buffer, "h", 0));
+			packet = protocol_packet(header, buffer);
+			protocol_packet_send(packet, client->socket);
 			break;
+		}
 		case OP_ME_ASIPAGPRO:
 			break;
 		case OP_ME_FINPRO:
