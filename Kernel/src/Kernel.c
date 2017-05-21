@@ -293,48 +293,49 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 }
 
 void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t console_socket) {
+    unsigned char buffer[BUFFER_CAPACITY];
 
     t_metadata_program* dataProgram = metadata_desde_literal((char*)program.payload);
     t_pcb* pcb = crear_pcb_proceso(dataProgram);
 
-    unsigned char buff[BUFFER_CAPACITY];
-    header_t header = protocol_header(OP_KE_SEND_PID);
-    header.msgsize = serial_pack(buff, "h", pcb->idProcess);
-    packet_t packet = protocol_packet(header, buff);
-    protocol_packet_send(packet, console_socket);
+    header_t headerConsola = protocol_header(OP_KE_SEND_PID);
+    headerConsola.usrpid = pcb->idProcess;
+    packet_t packetConsola = protocol_packet(headerConsola);
+    protocol_packet_send(packetConsola, console_socket);
+
     list_add (pcb_new, pcb);
 
     if ((pcb_ready->elements_count+pcb_exec->elements_count+pcb_block->elements_count) < kernel->grado_multiprog){
+    	//Obtengo paginas requeridas para el proceso y se lo solicito a memoria
+        int pages = (program.header.msgsize/kernel->page_size) + (program.header.msgsize % kernel->page_size != 0) + kernel->stack_size;
 
-        int numberPages = (program.header.msgsize/kernel->page_size) + (program.header.msgsize % kernel->page_size != 0) + kernel->stack_size;
-        header_t header_inipro = protocol_header (OP_ME_INIPRO);
-        t_memreq* memreq = alloc (sizeof(memreq));
-        memreq->idProcess = pcb->idProcess;
-        memreq->pages = numberPages;
-        //header_inipro.msgsize = serial_pack_memreq (memreq, buff);
-        //packet_t packet_inipro = protocol_packet (header_inipro, buff);
-        //protocol_packet_send(packet_inipro, server_socket);
+        header_t headerMemoria = protocol_header(OP_ME_INIPRO, serial_pack(buffer, "H", pages));
+        headerMemoria.usrpid = pcb->idProcess;
+        packet_t packetMemoria = protocol_packet(headerMemoria, buffer);
+        protocol_packet_send(packetMemoria, server_socket);
 
-        //packet_t response_packet_inipro = protocol_packet_receive(server_socket);
-
-        if (true /*response_packet_inipro.header.opcode == OP_ME_AUTHORIZED*/){
-
-            pcb->pagesCode = numberPages;
-            pcb->stackPointer = numberPages - kernel->stack_size;
+        //Espero que responda memoria, si está OK (=0), continuo
+        packetMemoria = protocol_packet_receive(server_socket);
+        int res;
+        serial_unpack(packetMemoria.payload, "h", &res);
+        if (res) {
+            pcb->pagesCode = pages;
+            pcb->stackPointer = pages - kernel->stack_size;
             t_pcb* pcb = list_remove (pcb_new, 0);
 			list_add(pcb_ready, pcb);
 
            //protocol_packet_send(program, server_socket);
 
             header_t header_stack = protocol_header (OP_KE_SEND_STACK);
-            header_stack.msgsize = serial_pack_stack(pcb->stack, buff);
-            packet_t packet_stack = protocol_packet (header_stack, buff);
+            header_stack.msgsize = serial_pack_stack(pcb->stack, buffer);
+            packet_t packet_stack = protocol_packet (header_stack, buffer);
 
             //protocol_packet_send(packet_stack, server_socket);
-        }else{
+        }
+        else {
             pcb->exitCode = -1;
             list_add(pcb_exit, pcb);
-    }
+        }
     }
 }
 
