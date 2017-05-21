@@ -188,12 +188,12 @@ int main(int argc, char **argv) {
 
     title("Conexión");
     printf("Estableciendo conexión con la Memoria...");
-    int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
+    socket_t memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
     protocol_handshake_send(memoria_fd);
     printf("\33[2K\rConectado a la Memoria en %s:%s\n", kernel->ip_memoria, kernel->puerto_memoria);
-    /*packet_t page_size_packet = protocol_packet_receive(memoria_fd);
-    serial_unpack(page_size_packet.payload, "h", &kernel->page_size);*/
-    kernel->page_size = 512;
+
+    packet_t packet = protocol_packet_receive(memoria_fd);
+    serial_unpack(packet.payload, "h", &kernel->page_size);
 
 //    Lo comento para que no joda. Total por ahora no lo necesitamos.
 //    printf("Estableciendo conexión con el File System...");
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 //    printf("\33[2K\rConectado al File System en %s:%s\n", kernel->ip_fs, kernel->puerto_fs);
 
     thread_create(terminal);
-    init_server (memoria_fd, fs_fd);
+    init_server(memoria_fd, fs_fd);
 
     free(kernel);
     return 0;
