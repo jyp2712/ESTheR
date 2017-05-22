@@ -89,8 +89,10 @@ void cli_thread(client_t *client) {
 		}
 		case OP_ME_ALMBYTPAG:
 		{
-			int page, offset, size;
-			serial_unpack(packet.payload, "HHHs", &page, &offset, &size, buffer);
+			int i, page, offset, size;
+			int bytes = serial_unpack(packet.payload, "HHH", &page, &offset, &size);
+
+			for(i = bytes; i < size; i++) buffer[i - bytes] = packet.payload[i];
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
