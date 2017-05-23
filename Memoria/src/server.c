@@ -57,7 +57,7 @@ void cli_thread(client_t *client) {
 
 		if(!server.active) return;
 
-		log_report("packet.header syspid %s usrpid %s opcode %s msgsize %s", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
+		log_report("packet header syspid %d usrpid %d opcode %d msgsize %d", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
 		{
@@ -90,9 +90,9 @@ void cli_thread(client_t *client) {
 		case OP_ME_ALMBYTPAG:
 		{
 			int i, page, offset, size;
-			int bytes = serial_unpack(packet.payload, "HHH", &page, &offset, &size);
-
-			for(i = bytes; i < size; i++) buffer[i - bytes] = packet.payload[i];
+			serial_unpack(packet.payload, "HHH", &page, &offset, &size);
+			int bytes = 8;
+			for(i = bytes; i < bytes + size; i++) buffer[i - bytes] = packet.payload[i];
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
