@@ -39,6 +39,7 @@ void remove_client(client_t *client) {
 
 void cli_thread(client_t *client) {
 	unsigned char buffer[BUFFER_CAPACITY];
+	unsigned char buffer2[BUFFER_CAPACITY];
 	header_t header;
 	packet_t packet;
 
@@ -78,21 +79,20 @@ void cli_thread(client_t *client) {
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
-			if(!get_bytes(memory->main, frame, offset, size, buffer)) {
+			if(!get_bytes(memory->main, frame, offset, size, buffer2)) {
 				//TODO falta implementar validaciones de recuperacion de memoria
 			}
 
-			header = protocol_header_response(header, size);
+			header = protocol_header_response(header, serial_pack(buffer, "1024s", buffer2));
 			packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
 			break;
 		}
 		case OP_ME_ALMBYTPAG:
 		{
-			int i, page, offset, size;
-			serial_unpack(packet.payload, "HHH", &page, &offset, &size);
-			int bytes = 8;
-			for(i = bytes; i < bytes + size; i++) buffer[i - bytes] = packet.payload[i];
+			int page, offset, size;
+
+			serial_unpack(packet.payload, "HHH1024s", &page, &offset, &size, buffer);
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
