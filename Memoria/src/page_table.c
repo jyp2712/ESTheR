@@ -15,15 +15,15 @@ int set_pages(t_page_table *page_table, int pid, int pages) {
 	for(i = 0; i < page_rows; i++) {
 		if(page_table[i * COLS] == 0) r++;
 	}
-	if(r < pages) return -1;
+	if(r < pages) return 0;
 
 	for(i = 0; i < page_rows && pages > 0; i++) {
 		if(page_table[i * COLS] == 0) {
 			page_table[i * COLS] = pid;
-			pages--;
+			page_table[i * COLS + 1] = --pages;
 		}
 	}
-	return 0;
+	return 1;
 }
 
 int get_frame(t_page_table *page_table, int pid, int page) {
@@ -31,7 +31,7 @@ int get_frame(t_page_table *page_table, int pid, int page) {
 	for(i = 0; i < page_rows; i++) {
 		if(page_table[i * COLS] == pid && page_table[i * COLS + 1] == page) return i;
 	}
-	return -1;
+	return 1;
 }
 
 int get_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
@@ -40,7 +40,7 @@ int get_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
 	for(i = base; i < base + size; i++) {
 		data[j++] = main_memory[i];
 	}
-	return 0;
+	return 1;
 }
 
 int set_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
@@ -49,5 +49,5 @@ int set_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
 	for(i = base; i < base + size; i++) {
 		main_memory[i] = data[j++];
 	}
-	return 0;
+	return 1;
 }

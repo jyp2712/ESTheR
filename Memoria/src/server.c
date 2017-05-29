@@ -39,7 +39,6 @@ void remove_client(client_t *client) {
 
 void cli_thread(client_t *client) {
 	unsigned char buffer[BUFFER_CAPACITY];
-	unsigned char buffer2[BUFFER_CAPACITY];
 	header_t header;
 	packet_t packet;
 
@@ -79,11 +78,14 @@ void cli_thread(client_t *client) {
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
-			if(!get_bytes(memory->main, frame, offset, size, buffer2)) {
-				//TODO falta implementar validaciones de recuperacion de memoria
+			if(!get_bytes(memory->main, frame, offset, size, buffer)) {
+				header = protocol_header_response(header, 0);
+				packet = protocol_packet(header);
+				protocol_packet_send(packet, client->socket);
+				break;
 			}
 
-			header = protocol_header_response(header, serial_pack(buffer, "1024s", buffer2));
+			header = protocol_header_response(header, size);
 			packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
 			break;
@@ -92,15 +94,19 @@ void cli_thread(client_t *client) {
 		{
 			int page, offset, size;
 
-			serial_unpack(packet.payload, "HHH1024s", &page, &offset, &size, buffer);
+			serial_unpack(packet.payload, "HHH", &page, &offset, &size);
+			packet_t packet = protocol_packet_receive(client->socket);
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
-			if(!set_bytes(memory->main, frame, offset, size, buffer)) {
-				//TODO falta implementar validaciones de almacenamiento de memoria
+			if(!set_bytes(memory->main, frame, offset, size, packet.payload)) {
+				header = protocol_header_response(header, 0);
+				packet = protocol_packet(header);
+				protocol_packet_send(packet, client->socket);
+				break;
 			}
 
-			header = protocol_header_response(header, serial_pack(buffer, "h", 0));
+			header = protocol_header_response(header, serial_pack(buffer, "h", 1));
 			packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
 			break;
