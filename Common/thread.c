@@ -42,3 +42,25 @@ void thread_mutex_lock(mutex_t *mutex) {
 void thread_mutex_unlock(mutex_t *mutex) {
 	ptcheck(pthread_mutex_unlock(mutex));
 }
+
+void thread_mutex_destroy(mutex_t *mutex) {
+	ptcheck(pthread_mutex_destroy(mutex));
+}
+
+sem_t thread_sem(unsigned value) {
+	sem_t sem;
+	sem_init(&sem, 0, value);
+	return sem;
+}
+
+void thread_sem_wait(sem_t *sem) {
+	ptcheck(sem_wait(sem));
+}
+
+void thread_sem_signal(sem_t *sem) {
+	ptcheck(sem_post(sem));
+}
+
+void thread_sem_destroy(sem_t *sem) {
+	ptcheck(sem_destroy(sem));
+}

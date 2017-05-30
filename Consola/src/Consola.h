@@ -8,22 +8,28 @@
 #ifndef CONSOLA_H_
 #define CONSOLA_H_
 
-//#include <globals.h>
+#include "socket.h"
+#include "thread.h"
+#include "mlist.h"
 
-typedef struct{
-	char* ip_kernel;
-	char* puerto_kernel;
-} t_consola;
+typedef struct {
+	socket_t kernel;
+	mlist_t *threads;
+	char *message;
+	bool active;
+	thread_t receiver;
+} console_t;
 
-typedef struct{    //estructura para enviar al hilo que inicia programa
-	char * buffer;
-	const char * path;
-	int kernel_fd;
-}t_parametrosHilo;
+extern console_t console;
 
-void leerConfiguracionConsola(const char *path);
+typedef struct {
+	thread_t tid;
+	int pid;
+	sem_t sem;
+} program_t;
 
-void  iniciarPrograma(t_parametrosHilo * pamHilo);//Funcion para que cada hilo
-										//inice un programa
+void start_program_thread(string path);
+
+void terminate();
 
 #endif /* CONSOLA_H_ */

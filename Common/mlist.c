@@ -220,7 +220,7 @@ void mlist_clear(mlist_t *list, void *destroyer) {
 
 void mlist_destroy(mlist_t *list, void *destroyer) {
 	mlist_clear(list, destroyer);
-	pthread_mutex_destroy(&list->mutex);
+	thread_mutex_destroy(&list->mutex);
 	free(list);
 }
 

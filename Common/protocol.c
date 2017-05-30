@@ -29,8 +29,7 @@ static void send_header(header_t header, socket_t sockfd) {
 
 static header_t receive_header(socket_t sockfd) {
 	unsigned char buffer[HEADER_SIZE];
-	header_t header;
-	memset(&header, 0, sizeof header);
+	header_t header = {0};
 
 	if(socket_receive_bytes(buffer, HEADER_SIZE, sockfd) > 0) {
 		serial_unpack(buffer, "CCCL", &header.syspid, &header.usrpid, &header.opcode, &header.msgsize);
@@ -62,7 +61,6 @@ void protocol_packet_send(packet_t packet, socket_t sockfd) {
 packet_t protocol_packet_receive(socket_t sockfd) {
 	packet_t packet;
 	packet.header = receive_header(sockfd);
-
 	if(packet.header.opcode != OP_UNDEFINED){
 		packet.payload = malloc(packet.header.msgsize * sizeof(char));
 		socket_receive_bytes(packet.payload, packet.header.msgsize, sockfd);

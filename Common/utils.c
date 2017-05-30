@@ -101,9 +101,13 @@ int strtoi(string text) {
 
 bool is_empty(string text) {
 	if(text == NULL) return true;
-	char *str = string_duplicate(text);
+	char *str = string_duplicate((char*) text);
 	string_trim(&str);
 	bool empty = string_is_empty(str);
 	free(str);
 	return empty;
+}
+
+inline time_t get_current_time() {
+	return time(NULL);
 }
