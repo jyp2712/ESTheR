@@ -208,12 +208,12 @@ int main(int argc, char **argv) {
 
     title("Conexión");
     printf("Estableciendo conexión con la Memoria...");
-    int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
+    socket_t memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
     protocol_handshake_send(memoria_fd);
     printf("\33[2K\rConectado a la Memoria en %s:%s\n", kernel->ip_memoria, kernel->puerto_memoria);
-    packet_t page_size_packet = protocol_packet_receive(memoria_fd);
-    serial_unpack(page_size_packet.payload, "h", &kernel->page_size);
-    printf("%d\n", kernel->page_size);
+
+    packet_t packet = protocol_packet_receive(memoria_fd);
+    serial_unpack(packet.payload, "h", &kernel->page_size);
 
 //    Lo comento para que no joda. Total por ahora no lo necesitamos.
 //    printf("Estableciendo conexión con el File System...");
@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
 //    printf("\33[2K\rConectado al File System en %s:%s\n", kernel->ip_fs, kernel->puerto_fs);
 
     thread_create(terminal);
-    init_server (memoria_fd, fs_fd);
+    init_server(memoria_fd, fs_fd);
 
     free(kernel);
     return 0;
@@ -315,9 +315,11 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
 }
 
 void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t console_socket) {
+    unsigned char buffer[BUFFER_CAPACITY];
 
     t_metadata_program* dataProgram = metadata_desde_literal((char*)program.payload);
     t_pcb* pcb = crear_pcb_proceso(dataProgram);
+
 
     header_t header_pid = protocol_header(OP_KE_SEND_PID);
     header_pid.usrpid = pcb->idProcess;
@@ -326,38 +328,36 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
     list_add (pcb_new, pcb);
 
     if ((pcb_ready->elements_count+pcb_exec->elements_count+pcb_block->elements_count) < kernel->grado_multiprog){
+    	//Obtengo paginas requeridas para el proceso y se lo solicito a memoria
+        int pages = (program.header.msgsize/kernel->page_size) + (program.header.msgsize % kernel->page_size != 0) + kernel->stack_size;
 
-        int numberPages = (program.header.msgsize/kernel->page_size) + (program.header.msgsize % kernel->page_size != 0) + kernel->stack_size;
+        header_t headerMemoria = protocol_header(OP_ME_INIPRO, serial_pack(buffer, "H", pages));
+        headerMemoria.usrpid = pcb->idProcess;
+        packet_t packetMemoria = protocol_packet(headerMemoria, buffer);
+        protocol_packet_send(packetMemoria, server_socket);
 
-        unsigned char buff[BUFFER_CAPACITY];
-        header_t header_inipro = protocol_header (OP_ME_INIPRO);
-        t_memreq* memreq = alloc (sizeof(memreq));
-        memreq->idProcess = pcb->idProcess;
-        memreq->pages = numberPages;
-        //header_inipro.msgsize = serial_pack_memreq (memreq, buff);
-        //packet_t packet_inipro = protocol_packet (header_inipro, buff);
-        //protocol_packet_send(packet_inipro, server_socket);
-
-        //packet_t response_packet_inipro = protocol_packet_receive(server_socket);
-
-        if (true /*response_packet_inipro.header.opcode == OP_ME_AUTHORIZED*/){
-
-            pcb->pagesCode = numberPages;
-            pcb->stackPointer = numberPages - kernel->stack_size;
+        //Espero que responda memoria, si está OK (=0), continuo
+        packetMemoria = protocol_packet_receive(server_socket);
+        int res;
+        serial_unpack(packetMemoria.payload, "h", &res);
+        if (res) {
+            pcb->pagesCode = pages - kernel->stack_size;
+            pcb->stackPointer = pages - kernel->stack_size;
             t_pcb* pcb = list_remove (pcb_new, 0);
 			list_add(pcb_ready, pcb);
 
            //protocol_packet_send(program, server_socket);
 
             header_t header_stack = protocol_header (OP_KE_SEND_STACK);
-            header_stack.msgsize = serial_pack_stack(pcb->stack, buff);
-            packet_t packet_stack = protocol_packet (header_stack, buff);
+            header_stack.msgsize = serial_pack_stack(pcb->stack, buffer);
+            packet_t packet_stack = protocol_packet (header_stack, buffer);
 
             //protocol_packet_send(packet_stack, server_socket);
-        }else{
+        }
+        else {
             pcb->exitCode = -1;
             list_add(pcb_exit, pcb);
-    }
+        }
     }
 }
 
@@ -385,7 +385,6 @@ void planificacion (){
 }
 
 t_client* buscar_proceso (socket_t client){
-
 	t_client* aux;
 
 	for (int i = 0; i < cpu_conectadas->elements_count; i++){
