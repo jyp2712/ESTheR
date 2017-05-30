@@ -11,9 +11,14 @@
 // Por ahí podríamos ponerlo en el archivo de configuración
 #define MAX_THREADS 10
 
+typedef struct{
+	thread_t threadID;
+	int pid;
+}client_t;
+
 t_consola *config;
 socket_t kernel_fd;
-thread_t threads[MAX_THREADS];
+client_t threads[MAX_THREADS];
 unsigned nthread = 0;
 
 char command[BUFFER_CAPACITY];
@@ -57,6 +62,9 @@ void run_program(const char *path) {
 	packet_t packet = protocol_packet(protocol_header(OP_NEW_PROGRAM, fsize), payload);
 	protocol_packet_send(packet, kernel_fd);
 
+	packet_t packet_pid = protocol_packet_receive(kernel_fd);
+	threads[nthread].pid = packet_pid.header.usrpid;
+
 	unsigned num_prints = 0;
 	time_t start_time = time(NULL);
 	while(true) {
@@ -81,7 +89,8 @@ void start_program_thread(const char *path) {
 		return;
 	}
 
-	threads[nthread++] = thread_create(run_program, path);
+	threads[nthread].threadID = thread_create(run_program, path);
+	nthread++;
 }
 
 int main(int argc, char **argv) {

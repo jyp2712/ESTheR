@@ -23,6 +23,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     socket_set_add(cli_sock, &all_fds);
                     t_client* cliente = alloc(sizeof(t_client));
                     cliente->clientID = cli_sock;
+                    cliente->process= CONSOLE;
                     list_add (consolas_conectadas, cliente);
                     log_inform("Received handshake from %s\n", get_process_name(cli_process));
                 }
@@ -31,6 +32,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     t_client* cliente = alloc(sizeof(t_client));
                     cliente->clientID = cli_sock;
                     cliente->status = READY;
+                    cliente->process= CPU;
                     list_add (cpu_conectadas, cliente);
                     log_inform("Received handshake from %s\n", get_process_name(cli_process));
 
@@ -45,20 +47,33 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     socket_close(cli_sock);
                 }
             } else {
-                packet_t program = protocol_packet_receive(i);
-                if(program.header.opcode == OP_UNDEFINED) {
-                    socket_close(i);
-                    FD_CLR(i, &all_fds.set);
-                    continue;
-                }else{
-                    if(program.header.opcode == OP_NEW_PROGRAM) {
-                            gestion_datos_newPcb(program, mem_fd, i);
-                        }
-                    }
-                }
+            	t_client* process = buscar_proceso (i);
+            		if (process->process == CONSOLE){
+            			packet_t program = protocol_packet_receive(process->clientID);
+                		if(program.header.opcode == OP_UNDEFINED) {
+                			socket_close(i);
+                			FD_CLR(i, &all_fds.set);
+                			continue;
+                		}else{
+                			if(program.header.opcode == OP_NEW_PROGRAM) {
+                				pthread_mutex_lock(&mutex_planificacion);
+                				gestion_datos_newPcb(program, mem_fd, i);
+                				pthread_mutex_unlock(&mutex_planificacion);
+                			}
+                		}
+            		}
+
+                	if (process->process == CPU){
+                		pthread_mutex_lock(&mutex_planificacion);
+            			packet_t cpu_call = protocol_packet_receive(process->clientID);
+            			pthread_mutex_unlock(&mutex_planificacion);
+                	}
             }
-            planificacion();
         }
+        pthread_mutex_lock(&mutex_planificacion);
+        planificacion();
+        pthread_mutex_unlock(&mutex_planificacion);
+    }
 }
 
 void terminal() {
@@ -124,7 +139,7 @@ void terminal() {
                                         break;
                                     }
                                 }
-            } else if(streq(command, "end")) {
+            } else if(streq(command, "kill")) {
                 int pid = atoi(argument);
                 bool stop = 0;
                     while (!stop){
@@ -162,22 +177,27 @@ void terminal() {
                                     }
                                 }
                     }
-            } else if(streq(command, "flush")) {
-                puts("Caché vaciada.");
-            } else {
+            } else if(streq(command, "stop")) {
+            	pthread_mutex_lock(&mutex_planificacion);
+            } else if(streq(command, "restart")) {
+            	pthread_mutex_unlock(&mutex_planificacion);
+            }else {
                 puts("Comando no reconocido. Escriba 'help' para ayuda.");
             }
         }
 }
 
 int main(int argc, char **argv) {
+
     guard(argc == 2, "Falta indicar ruta de archivo de configuración");
     set_current_process(KERNEL);
     title("KERNEL");
 
     kernel = malloc(sizeof(t_kernel));
     leerConfiguracionKernel(kernel, argv[1]);
-    pcb_ready = list_create();
+
+	pthread_mutex_init(&mutex_planificacion, NULL);
+	pcb_ready = list_create();
     pcb_new = list_create();
     pcb_exec = list_create();
     pcb_block = list_create();
@@ -191,9 +211,9 @@ int main(int argc, char **argv) {
     int memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
     protocol_handshake_send(memoria_fd);
     printf("\33[2K\rConectado a la Memoria en %s:%s\n", kernel->ip_memoria, kernel->puerto_memoria);
-    /*packet_t page_size_packet = protocol_packet_receive(memoria_fd);
-    serial_unpack(page_size_packet.payload, "h", &kernel->page_size);*/
-    kernel->page_size = 512;
+    packet_t page_size_packet = protocol_packet_receive(memoria_fd);
+    serial_unpack(page_size_packet.payload, "h", &kernel->page_size);
+    printf("%d\n", kernel->page_size);
 
 //    Lo comento para que no joda. Total por ahora no lo necesitamos.
 //    printf("Estableciendo conexión con el File System...");
@@ -207,6 +227,7 @@ int main(int argc, char **argv) {
     free(kernel);
     return 0;
 }
+
 
 void leerConfiguracionKernel(t_kernel* kernel, char* path){
 
@@ -255,6 +276,7 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
         printf("STACK_SIZE: %i\n", kernel->stack_size);
 }
 
+
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {
     t_pcb *element = alloc(sizeof(t_pcb));
     generatorPid += 1;
@@ -297,16 +319,17 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
     t_metadata_program* dataProgram = metadata_desde_literal((char*)program.payload);
     t_pcb* pcb = crear_pcb_proceso(dataProgram);
 
-    unsigned char buff[BUFFER_CAPACITY];
-    header_t header = protocol_header(OP_KE_SEND_PID);
-    header.msgsize = serial_pack(buff, "h", pcb->idProcess);
-    packet_t packet = protocol_packet(header, buff);
+    header_t header_pid = protocol_header(OP_KE_SEND_PID);
+    header_pid.usrpid = pcb->idProcess;
+    packet_t packet = protocol_packet(header_pid);
     protocol_packet_send(packet, console_socket);
     list_add (pcb_new, pcb);
 
     if ((pcb_ready->elements_count+pcb_exec->elements_count+pcb_block->elements_count) < kernel->grado_multiprog){
 
         int numberPages = (program.header.msgsize/kernel->page_size) + (program.header.msgsize % kernel->page_size != 0) + kernel->stack_size;
+
+        unsigned char buff[BUFFER_CAPACITY];
         header_t header_inipro = protocol_header (OP_ME_INIPRO);
         t_memreq* memreq = alloc (sizeof(memreq));
         memreq->idProcess = pcb->idProcess;
@@ -338,6 +361,7 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
     }
 }
 
+
 void planificacion (){
     while (!list_is_empty(pcb_ready) && !list_is_empty(cpu_conectadas)){
         unsigned char buff[BUFFER_CAPACITY];
@@ -353,9 +377,31 @@ void planificacion (){
 
         t_client* cpu = list_remove(cpu_conectadas, 0);
         protocol_packet_send(packet_pcb, cpu->clientID);
+        cpu->status = EXEC;
 
         list_add(pcb_exec, pcbToExec);
         list_add (cpu_executing, cpu);
     }
 }
 
+t_client* buscar_proceso (socket_t client){
+
+	t_client* aux;
+
+	for (int i = 0; i < cpu_conectadas->elements_count; i++){
+		aux = list_get (cpu_conectadas, i);
+		if (aux->clientID == client) break;
+	}
+
+	for (int i = 0; i < cpu_executing->elements_count; i++){
+	 	aux = list_get (cpu_executing, i);
+	 	if (aux->clientID == client) break;
+	}
+
+	for (int i = 0; i < consolas_conectadas->elements_count; i++){
+		aux = list_get (consolas_conectadas, i);
+		if (aux->clientID == client) break;
+	}
+
+	return aux;
+}

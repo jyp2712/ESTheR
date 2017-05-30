@@ -59,12 +59,14 @@ typedef struct{
 
 typedef struct{
     socket_t clientID;
+    unsigned char process;
     int status;
     int pid;
 }t_client;
 
 char command[BUFFER_CAPACITY];
 int generatorPid = 0;
+pthread_mutex_t mutex_planificacion;
 
 t_kernel* kernel;
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
@@ -77,6 +79,8 @@ t_pcb* crear_pcb_proceso (t_metadata_program*);
 void gestion_datos_newPcb(packet_t, socket_t, socket_t);
 
 void planificacion();
+
+t_client* buscar_proceso (socket_t);
 
 #endif /* KERNEL_H_ */
 
