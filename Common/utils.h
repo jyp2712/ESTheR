@@ -104,4 +104,10 @@ int strtoi(string text);
  */
 bool is_empty(string text);
 
+/**
+ * Obtiene el tiempo actual.
+ * @return Tiempo actual.
+ */
+time_t get_current_time(void);
+
 #endif /* utils_h */

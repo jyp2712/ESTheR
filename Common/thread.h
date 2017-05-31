@@ -2,6 +2,7 @@
 #define thread_h
 
 #include <pthread.h>
+#include <semaphore.h>
 #include <signal.h>
 
 typedef pthread_t thread_t;
@@ -49,5 +50,36 @@ void thread_mutex_lock(mutex_t *mutex);
  * @param mutex Semáforo a desbloquear.
  */
 void thread_mutex_unlock(mutex_t *mutex);
+
+/**
+ * Destruye un semáforo de exclusión mutua.
+ * @param mutex Semáforo a destruir.
+ */
+void thread_mutex_destroy(mutex_t *mutex);
+
+/**
+ * Crea un semáforo contador.
+ * @return Semáforo contador.
+ */
+sem_t thread_sem(unsigned value);
+
+/**
+ * Disminuye el valor de un semáforo contador.
+ * Si el valor pasa a ser negativo, se bloquea.
+ * @param sem Semáforo contador.
+ */
+void thread_sem_wait(sem_t *sem);
+
+/**
+ * Aumenta el valor de un semáforo contador.
+ * @param sem Semáforo contador.
+ */
+void thread_sem_signal(sem_t *sem);
+
+/**
+ * Destruye un semáforo contador.
+ * @param mutex Semáforo a destruir.
+ */
+void thread_sem_destroy(sem_t *sem);
 
 #endif /* thread_h */
