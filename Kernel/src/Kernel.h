@@ -64,6 +64,11 @@ typedef struct{
     int pid;
 }t_client;
 
+typedef struct{
+	unsigned char* codigo;
+	unsigned long size;
+}t_code_ms;
+
 char command[BUFFER_CAPACITY];
 int generatorPid = 0;
 pthread_mutex_t mutex_planificacion;
@@ -71,14 +76,15 @@ pthread_mutex_t mutex_planificacion;
 t_kernel* kernel;
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
 t_list *consolas_conectadas, *consolas_desconectadas, *cpu_conectadas, *cpu_executing;
+t_list *deadpid, *codes_ms;
 
 void leerConfiguracionKernel(t_kernel*, char* path);
 
 t_pcb* crear_pcb_proceso (t_metadata_program*);
 
-void gestion_datos_newPcb(packet_t, socket_t, socket_t);
+void gestion_datos_newPcb(packet_t, t_client*);
 
-void planificacion();
+void planificacion(socket_t);
 
 t_client* buscar_proceso (socket_t);
 

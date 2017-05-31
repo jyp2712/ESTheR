@@ -1,6 +1,5 @@
 #include "Kernel.h"
 
-
 void init_server(socket_t mem_fd, socket_t fs_fd) {
 
     fdset_t read_fds, all_fds = socket_set_create();
@@ -57,7 +56,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                 		}else{
                 			if(program.header.opcode == OP_NEW_PROGRAM) {
                 				pthread_mutex_lock(&mutex_planificacion);
-                				gestion_datos_newPcb(program, mem_fd, i);
+                				gestion_datos_newPcb(program, process);
                 				pthread_mutex_unlock(&mutex_planificacion);
                 			}
                 		}
@@ -71,7 +70,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
             }
         }
         pthread_mutex_lock(&mutex_planificacion);
-        planificacion();
+        planificacion(mem_fd);
         pthread_mutex_unlock(&mutex_planificacion);
     }
 }
@@ -188,7 +187,6 @@ void terminal() {
 }
 
 int main(int argc, char **argv) {
-
     guard(argc == 2, "Falta indicar ruta de archivo de configuración");
     set_current_process(KERNEL);
     title("KERNEL");
@@ -205,6 +203,8 @@ int main(int argc, char **argv) {
     consolas_conectadas = list_create();
     cpu_conectadas = list_create ();
     cpu_executing = list_create();
+    deadpid = list_create();
+    codes_ms = list_create();
 
     title("Conexión");
     printf("Estableciendo conexión con la Memoria...");
@@ -227,7 +227,6 @@ int main(int argc, char **argv) {
     free(kernel);
     return 0;
 }
-
 
 void leerConfiguracionKernel(t_kernel* kernel, char* path){
 
@@ -276,7 +275,6 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
         printf("STACK_SIZE: %i\n", kernel->stack_size);
 }
 
-
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {
     t_pcb *element = alloc(sizeof(t_pcb));
     generatorPid += 1;
@@ -314,24 +312,37 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
     return element;
 }
 
-void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t console_socket) {
-    unsigned char buffer[BUFFER_CAPACITY];
+void gestion_datos_newPcb(packet_t program, t_client* console) {
 
     t_metadata_program* dataProgram = metadata_desde_literal((char*)program.payload);
     t_pcb* pcb = crear_pcb_proceso(dataProgram);
 
+    t_code_ms* code = alloc(sizeof(t_code_ms));
+    code->codigo = alloc(program.header.msgsize);
+    memcpy(code->codigo, program.payload, program.header.msgsize);
+    code->size = program.header.msgsize;
+    list_add(codes_ms, code);
 
     header_t header_pid = protocol_header(OP_KE_SEND_PID);
     header_pid.usrpid = pcb->idProcess;
     packet_t packet = protocol_packet(header_pid);
-    protocol_packet_send(packet, console_socket);
+    protocol_packet_send(packet, console->clientID);
+    console->pid = pcb->idProcess;
+
     list_add (pcb_new, pcb);
+}
 
-    if ((pcb_ready->elements_count+pcb_exec->elements_count+pcb_block->elements_count) < kernel->grado_multiprog){
-    	//Obtengo paginas requeridas para el proceso y se lo solicito a memoria
-        int pages = (program.header.msgsize/kernel->page_size) + (program.header.msgsize % kernel->page_size != 0) + kernel->stack_size;
+void planificacion (socket_t server_socket){
+    unsigned char buffer[BUFFER_CAPACITY];
 
-        header_t headerMemoria = protocol_header(OP_ME_INIPRO, serial_pack(buffer, "H", pages));
+	if ((list_size(pcb_ready) + list_size(pcb_exec) + list_size(pcb_block)) < kernel->grado_multiprog && !list_is_empty(pcb_new)){
+		t_code_ms* code = list_remove(codes_ms, 0);
+		//Obtengo paginas requeridas para el proceso y se lo solicito a memoria
+        int pages = (code->size/kernel->page_size) + (code->size % kernel->page_size != 0) + kernel->stack_size;
+
+        t_pcb* pcb = list_remove (pcb_new, 0);
+
+        header_t headerMemoria = protocol_header(OP_ME_INIPRO, serial_pack(buffer, "h", pages));
         headerMemoria.usrpid = pcb->idProcess;
         packet_t packetMemoria = protocol_packet(headerMemoria, buffer);
         protocol_packet_send(packetMemoria, server_socket);
@@ -343,26 +354,25 @@ void gestion_datos_newPcb(packet_t program, socket_t server_socket, socket_t con
         if (res) {
             pcb->pagesCode = pages - kernel->stack_size;
             pcb->stackPointer = pages - kernel->stack_size;
-            t_pcb* pcb = list_remove (pcb_new, 0);
-			list_add(pcb_ready, pcb);
+    		list_add(pcb_ready, pcb);
 
-           //protocol_packet_send(program, server_socket);
+    		header_t header_code = protocol_header(OP_KE_SEND_CODE);
+    		header_code.msgsize = code->size;
+    		packet_t packet_code = protocol_packet(header_code, code->codigo);
+    		protocol_packet_send(packet_code, server_socket);
 
             header_t header_stack = protocol_header (OP_KE_SEND_STACK);
             header_stack.msgsize = serial_pack_stack(pcb->stack, buffer);
             packet_t packet_stack = protocol_packet (header_stack, buffer);
 
-            //protocol_packet_send(packet_stack, server_socket);
+            protocol_packet_send(packet_stack, server_socket);
         }
         else {
             pcb->exitCode = -1;
             list_add(pcb_exit, pcb);
         }
     }
-}
 
-
-void planificacion (){
     while (!list_is_empty(pcb_ready) && !list_is_empty(cpu_conectadas)){
         unsigned char buff[BUFFER_CAPACITY];
         t_pcb* pcbToExec = list_remove(pcb_ready, 0);
@@ -403,4 +413,34 @@ t_client* buscar_proceso (socket_t client){
 	}
 
 	return aux;
+}
+
+void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
+    unsigned char buffer[BUFFER_CAPACITY];
+
+	switch (cpu_syscall.header.opcode){
+				case OP_CPU_PROGRAM_END:{ 	t_pcb* pcb = alloc(sizeof(t_pcb));
+											serial_unpack_pcb(pcb, cpu_syscall.payload);
+											bool getPcb (t_pcb *pcbExec){
+												return (pcb->idProcess == pcbExec->idProcess);
+											}
+											t_pcb* aux = list_remove_by_condition(pcb_exec, (void*)getPcb);
+											free(aux);
+											list_add(pcb_exit, pcb);
+
+											bool getClient (t_client *console){
+												return (pcb->idProcess == console->pid);
+											}
+											t_client* console = list_find(consolas_conectadas, (void*)getClient);
+
+											header_t header_program_end = protocol_header(OP_KE_PROGRAM_END, serial_pack(buffer, "h", pcb->exitCode));
+										    header_program_end.usrpid = pcb->idProcess;
+										    packet_t packet_program_end = protocol_packet(header_program_end, buffer);
+										    protocol_packet_send(packet_program_end, console->clientID);
+										    protocol_packet_send(packet_program_end, mem_socket);
+
+											//restoreCPU(cpu);
+											break;
+										}
+	}
 }
