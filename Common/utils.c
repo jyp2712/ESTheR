@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "log.h"
 #include <time.h>
+#include <stdarg.h>
 
 void quit(const char *err) {
 	if(err != NULL) {
@@ -110,4 +111,14 @@ bool is_empty(string text) {
 
 inline time_t get_current_time() {
 	return time(NULL);
+}
+
+void print(string format, ...) {
+	va_list ap;
+	va_start(ap, format);
+	printf("\33[2K\r");
+	vprintf(format, ap);
+	printf("\n> ");
+	fflush(stdout);
+	va_end(ap);
 }

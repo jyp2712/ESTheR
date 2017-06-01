@@ -7,7 +7,7 @@ program_t *get_program(int pid) {
 	bool condition(program_t *element) {
 		return element->pid == pid;
 	}
-	return mlist_find(console.threads, condition);
+	return mlist_find(console.programs, condition);
 }
 
 void message_receiver() {
@@ -19,8 +19,9 @@ void message_receiver() {
 			terminate();
 			return;
 		case OP_KE_SEND_PID:
-			program = mlist_last(console.threads);
+			program = mlist_last(console.programs);
 			program->pid = packet.header.usrpid;
+			print("Programa #%d iniciado.", program->pid);
 			break;
 		default:
 			program = get_program(packet.header.usrpid);

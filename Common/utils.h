@@ -110,4 +110,10 @@ bool is_empty(string text);
  */
 time_t get_current_time(void);
 
+/**
+ * Imprime un mensaje mientras se están tomando datos por consola.
+ * @param format Formato del mensaje.
+ */
+void print(string format, ...);
+
 #endif /* utils_h */

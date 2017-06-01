@@ -14,7 +14,7 @@
 
 typedef struct {
 	socket_t kernel;
-	mlist_t *threads;
+	mlist_t *programs;
 	char *message;
 	bool active;
 	thread_t receiver;
@@ -23,9 +23,10 @@ typedef struct {
 extern console_t console;
 
 typedef struct {
-	thread_t tid;
 	int pid;
+	thread_t tid;
 	sem_t sem;
+	bool active;
 } program_t;
 
 void start_program_thread(string path);

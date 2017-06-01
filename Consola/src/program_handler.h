@@ -5,6 +5,8 @@
 
 void destroy_program(program_t *program);
 
+void remove_program(program_t *program);
+
 void program_handler(string path);
 
 #endif /* PROGRAM_HANDLER_H_ */

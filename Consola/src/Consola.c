@@ -8,7 +8,7 @@
 #include "message_receiver.h"
 
 // Máximo de programas concurrentes para cada consola
-#define MAX_THREADS 10
+#define MAX_PROGRAMS 10
 
 console_t console;
 
@@ -18,7 +18,7 @@ void start_program_thread(string path) {
 		return;
 	}
 
-	if(mlist_length(console.threads) >= MAX_THREADS) {
+	if(mlist_length(console.programs) >= MAX_PROGRAMS) {
 		puts("Demasiados programas en ejecución. Intente más tarde.");
 		return;
 	}
@@ -27,7 +27,8 @@ void start_program_thread(string path) {
 	program->pid = -1;
 	program->tid = thread_create(program_handler, path);
 	program->sem = thread_sem(0);
-	mlist_append(console.threads, program);
+	program->active = true;
+	mlist_append(console.programs, program);
 }
 
 void init(string path) {
@@ -43,16 +44,19 @@ void init(string path) {
 	console_config_delete(config);
 	printf("\33[2K\rConectado al Kernel en %s:%s\n", kernel_ip, kernel_port);
 
-	console.threads = mlist_create();
+	console.programs = mlist_create();
 	console.receiver = thread_create(message_receiver);
 }
 
 void terminate() {
+	if(!console.active) return;
 	console.active = false;
+
 	thread_kill(console.receiver);
-	mlist_destroy(console.threads, destroy_program);
+	mlist_destroy(console.programs, destroy_program);
 	socket_close(console.kernel);
 	printf("\n");
+
 	exit(EXIT_SUCCESS);
 }
 
