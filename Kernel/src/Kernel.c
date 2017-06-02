@@ -242,16 +242,16 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
         kernel->quantum_sleep = config_get_int_value(config, "QUANTUM_SLEEP");
         kernel->algoritmo = config_get_string_value(config, "ALGORITMO");
         kernel->grado_multiprog = config_get_int_value(config, "GRADO_MULTIPROG");
-        char** semaforos = config_get_array_value(config, "SEM_IDS");
-        for(int i=0; i<3; i++){
-            strcpy (kernel->sem_ids[i].__size, semaforos[i]);
-        }
-        char** semaforos_init = config_get_array_value(config, "SEM_INIT");
-        for(int i=0; i<3; i++){
-            kernel->sem_init[i] = atoi (semaforos_init[i]);
+        kernel->sem_ids = config_get_array_value(config, "SEM_IDS");
+        kernel->sem_init = config_get_array_value(config, "SEM_INIT");
+        int counter = 0; while (kernel->sem_ids[counter]) counter++;
+        int initValue; sem_ansisop = realloc(sem_ansisop, counter * sizeof(sem_t));
+        for(int i=0; i<counter; i++){
+        	initValue = atoi(kernel->sem_init[i]);
+        	sem_init(&sem_ansisop[i], 0, initValue);
         }
         kernel->shared_vars = config_get_array_value (config, "SHARED_VARS");
-        int counter = 0; while (kernel->shared_vars[counter]) counter++;
+        counter = 0; while (kernel->shared_vars[counter]) counter++;
         kernel->shared_values = realloc (kernel->shared_values, counter * sizeof(int));
         for(int i=0; i<counter; i++){
             kernel->shared_values[i] = 0;
@@ -269,8 +269,8 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
         printf("QUANTUM_SLEEP: %i\n", kernel->quantum_sleep);
         printf("ALGORITMO: %s\n", kernel->algoritmo);
         printf("GRADO_MULTIPROG: %i\n", kernel->grado_multiprog);
-        printf("SEM_IDS:[%s, %s ,%s]\n", kernel->sem_ids[0].__size, kernel->sem_ids[1].__size, kernel->sem_ids[2].__size);
-        printf("SEM_INIT:[%d, %d ,%d]\n", kernel->sem_init[0], kernel->sem_init[1], kernel->sem_init[2]);
+        printf("SEM_IDS:[%s, %s ,%s]\n", kernel->sem_ids[0], kernel->sem_ids[1], kernel->sem_ids[2]);
+        printf("SEM_INIT:[%s, %s ,%s]\n", kernel->sem_init[0], kernel->sem_init[1], kernel->sem_init[2]);
         printf("SHARED_VARS:[!%s, !%s ,!%s]\n", kernel->shared_vars[0], kernel->shared_vars[1], kernel->shared_vars[2]);
         printf("STACK_SIZE: %i\n", kernel->stack_size);
 }
@@ -388,6 +388,7 @@ void planificacion (socket_t server_socket){
         t_client* cpu = list_remove(cpu_conectadas, 0);
         protocol_packet_send(packet_pcb, cpu->clientID);
         cpu->status = EXEC;
+        cpu->pid = pcbToExec->idProcess;
 
         list_add(pcb_exec, pcbToExec);
         list_add (cpu_executing, cpu);
@@ -416,31 +417,67 @@ t_client* buscar_proceso (socket_t client){
 }
 
 void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
+
     unsigned char buffer[BUFFER_CAPACITY];
 
 	switch (cpu_syscall.header.opcode){
-				case OP_CPU_PROGRAM_END:{ 	t_pcb* pcb = alloc(sizeof(t_pcb));
-											serial_unpack_pcb(pcb, cpu_syscall.payload);
-											bool getPcb (t_pcb *pcbExec){
-												return (pcb->idProcess == pcbExec->idProcess);
-											}
-											t_pcb* aux = list_remove_by_condition(pcb_exec, (void*)getPcb);
-											free(aux);
-											list_add(pcb_exit, pcb);
+		case OP_CPU_PROGRAM_END:{ 	t_pcb* pcb = alloc(sizeof(t_pcb));
+									serial_unpack_pcb(pcb, cpu_syscall.payload);
+									bool getPcb (t_pcb *pcbExec){
+									return (pcb->idProcess == pcbExec->idProcess);
+									}
+									t_pcb* aux = list_remove_by_condition(pcb_exec, (void*)getPcb);
+									free(aux);
+									list_add(pcb_exit, pcb);
 
-											bool getClient (t_client *console){
-												return (pcb->idProcess == console->pid);
-											}
-											t_client* console = list_find(consolas_conectadas, (void*)getClient);
+									bool getClient (t_client *console){
+										return (pcb->idProcess == console->pid);
+									}
+									t_client* console = list_find(consolas_conectadas, (void*)getClient);
 
-											header_t header_program_end = protocol_header(OP_KE_PROGRAM_END, serial_pack(buffer, "h", pcb->exitCode));
-										    header_program_end.usrpid = pcb->idProcess;
-										    packet_t packet_program_end = protocol_packet(header_program_end, buffer);
-										    protocol_packet_send(packet_program_end, console->clientID);
-										    protocol_packet_send(packet_program_end, mem_socket);
+									header_t header_program_end = protocol_header(OP_KE_PROGRAM_END, serial_pack(buffer, "h", pcb->exitCode));
+								    header_program_end.usrpid = pcb->idProcess;
+									packet_t packet_program_end = protocol_packet(header_program_end, buffer);
+								    protocol_packet_send(packet_program_end, console->clientID);
+								    protocol_packet_send(packet_program_end, mem_socket);
 
-											//restoreCPU(cpu);
-											break;
+									//restoreCPU(cpu);
+									break;
+		}
+		case OP_CPU_SEMAPHORE:{		t_pcb* pcb = alloc(sizeof(t_pcb));
+									serial_unpack_pcb(pcb, cpu_syscall.payload);
+									bool getPcb (t_pcb *pcbExec){
+									return (pcb->idProcess == pcbExec->idProcess);
+									}
+									t_pcb* aux = list_remove_by_condition(pcb_exec, (void*)getPcb);
+									free(aux);
+									packet_t packet_sem = protocol_packet_receive(cpu->clientID);
+									char sem[20];
+									serial_unpack(packet_sem.payload, "20s", &sem);
+									int i=0;int semValue;
+									while(kernel->sem_ids){
+										if (strcmp(kernel->sem_ids[i], sem) == 0) break;
+									}
+									if (true/*packet_sem.header.opcode == wait*/){
+										sem_wait(&sem_ansisop[i]);
+										sem_getvalue(&sem_ansisop[i], &semValue);
+										if (semValue>0){
+											list_add(pcb_ready, pcb);
+										}else{
+											list_add(pcb_block, pcb);
 										}
+									}else{
+										sem_post(&sem_ansisop[i]);
+										sem_getvalue(&sem_ansisop[i], &semValue);
+										if (semValue>0){
+											//hay que tomar el primer pcb bloqueado que esperaba este semáforo
+										}else{
+											list_add(pcb_block, pcb);
+										}
+									}
+
+									//restore(cpu);
+									break;
+		}
 	}
 }

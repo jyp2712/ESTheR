@@ -1,15 +1,7 @@
-/*
- * Kernel.h
- *
- *  Created on: 3/4/2017
- *      Author: utnso
- */
-
 #ifndef KERNEL_H_
 #define KERNEL_H_
 
 #define PACKAGESIZE 1024
-#define CANT_SEM 3
 
 #include <sys/inotify.h>
 #include <semaphore.h>
@@ -49,8 +41,8 @@ typedef struct{
     int quantum_sleep;
     char* algoritmo;
     int grado_multiprog;
-    sem_t sem_ids[CANT_SEM];
-    int sem_init[CANT_SEM];
+    char** sem_ids;
+    char** sem_init;
     char** shared_vars;
     int* shared_values;
     int stack_size;
@@ -72,6 +64,7 @@ typedef struct{
 char command[BUFFER_CAPACITY];
 int generatorPid = 0;
 pthread_mutex_t mutex_planificacion;
+sem_t *sem_ansisop;
 
 t_kernel* kernel;
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
@@ -89,4 +82,3 @@ void planificacion(socket_t);
 t_client* buscar_proceso (socket_t);
 
 #endif /* KERNEL_H_ */
-
