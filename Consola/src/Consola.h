@@ -12,6 +12,8 @@
 #include "thread.h"
 #include "mlist.h"
 
+enum program_status {PROGRAM_ACTIVE, PROGRAM_ENDED, PROGRAM_KILLED};
+
 typedef struct {
 	socket_t kernel;
 	mlist_t *programs;
@@ -26,7 +28,7 @@ typedef struct {
 	int pid;
 	thread_t tid;
 	sem_t sem;
-	bool active;
+	int status;
 } program_t;
 
 void start_program_thread(string path);

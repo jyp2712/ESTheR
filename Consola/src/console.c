@@ -19,14 +19,20 @@ void clear_screen() {
 
 void list_programs() {
 	int num_programs = mlist_length(console.programs);
-	printf("Programas ejecutando: %d\n", num_programs);
-	if(num_programs == 0) return;
-	printf("PIDs: ");
+	if(num_programs == 0) {
+		printf("Ningún programa ejecutando.\n");
+		return;
+	}
+	if(num_programs == 1) {
+		printf("Un programa ejecutando: ");
+	} else {
+		printf("%d programas ejecutando: ", num_programs);
+	}
 	void routine(program_t *program) {
 		printf("%d, ", program->pid);
 	}
 	mlist_traverse(console.programs, routine);
-	printf("\b\b\33[K\n");
+	printf("\b\b\33[K.\n");
 }
 
 void kill_program(string argument) {
@@ -55,6 +61,19 @@ void start_console() {
 	while(true) {
 		char *argument = input(command);
 		if(streq(command, "logout")) break;
+
+		if(streq(command, "debug")) {
+			if(argument == NULL) continue;
+			program_t *program = mlist_first(console.programs);
+			if(streq(argument, "end")) {
+				program->status = PROGRAM_ENDED;
+			} else if(streq(argument, "print")) {
+				char *payload = strdup("Lorem ipsum dolor sit amet");
+				console.message = payload;
+			}
+			thread_sem_signal(&program->sem);
+		} else
+
 		if(streq(command, "list")) {
 			list_programs();
 		} else if(streq(command, "help")) {

@@ -27,7 +27,7 @@ void start_program_thread(string path) {
 	program->pid = -1;
 	program->tid = thread_create(program_handler, path);
 	program->sem = thread_sem(0);
-	program->active = true;
+	program->status = PROGRAM_ACTIVE;
 	mlist_append(console.programs, program);
 }
 

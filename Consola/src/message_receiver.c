@@ -2,6 +2,7 @@
 #include "protocol.h"
 #include "mlist.h"
 #include "Consola.h"
+#include "log.h"
 
 program_t *get_program(int pid) {
 	bool condition(program_t *element) {
@@ -21,7 +22,13 @@ void message_receiver() {
 		case OP_KE_SEND_PID:
 			program = mlist_last(console.programs);
 			program->pid = packet.header.usrpid;
+			log_inform("Program #%d started", program->pid);
 			print("Programa #%d iniciado.", program->pid);
+			break;
+		case OP_KE_PROGRAM_END:
+			program = get_program(packet.header.usrpid);
+			program->status = PROGRAM_ENDED;
+			thread_sem_signal(&program->sem);
 			break;
 		default:
 			program = get_program(packet.header.usrpid);

@@ -29,7 +29,7 @@ void mkdirs(const char *path) {
 }
 
 char *input(char *command) {
-	printf("> ");
+	printf("\33[2K\r> ");
 	fgets(command, BUFFER_CAPACITY, stdin);
 	command[strcspn(command, "\n")] = '\0';
 	char *p = strchr(command, ' ');
@@ -77,7 +77,7 @@ const char *datetime(time_t time) {
 }
 
 const char *timediff(time_t t1, time_t t2) {
-	unsigned duration = (unsigned) difftime(t1, t2);
+	unsigned duration = abs((int) difftime(t1, t2));
 	unsigned seconds = duration % 60;
 	unsigned minutes = duration / 60;
 	unsigned hours = minutes / 60;

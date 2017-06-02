@@ -12,7 +12,7 @@ void notify_kernel(int pid) {
 
 void destroy_program(program_t *program) {
 	notify_kernel(program->pid);
-	program->active = false;
+	program->status = PROGRAM_KILLED;
 	thread_sem_signal(&program->sem);
 	thread_kill(program->tid);
 	thread_sem_destroy(&program->sem);
@@ -43,20 +43,30 @@ void program_handler(string path) {
 
 	unsigned num_prints = 0;
 	time_t start_time = get_current_time();
-	while(true) {
+	while(program->status == PROGRAM_ACTIVE) {
 		thread_sem_wait(&program->sem);
-		if(!program->active) {
-			log_inform("Program #%d ended", program->pid);
+		switch(program->status) {
+		case PROGRAM_ACTIVE:
+			print("[%03d] %s", program->pid, console.message);
+			free(console.message);
+			num_prints++;
+			break;
+		case PROGRAM_KILLED:
+			log_inform("Program #%d killed", program->pid);
+			if(console.active) {
+				print("Programa #%d cancelado.", program->pid);
+			}
 			return;
 		}
-		printf("%s\n", console.message);
 	}
 	time_t end_time = get_current_time();
 
-	printf("Hora de inicio: %s\n", datetime(start_time));
-	printf("Hora de finalización: %s\n", datetime(end_time));
-	printf("Cantidad de impresiones: %u\n", num_prints);
-	printf("Tiempo de ejecución: %s\n", timediff(start_time, end_time));
+	log_inform("Program #%d ended", program->pid);
+	print("Programa #%d terminado.", program->pid);
+	print("Hora de inicio: %s", datetime(start_time));
+	print("Hora de finalización: %s", datetime(end_time));
+	print("Cantidad de impresiones: %u", num_prints);
+	print("Tiempo de ejecución: %s", timediff(start_time, end_time));
 
 	remove_program(program);
 }
