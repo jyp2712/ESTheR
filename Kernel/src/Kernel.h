@@ -12,6 +12,7 @@
 #include "structures.h"
 #include "protocol.h"
 #include "utils.h"
+#include "console.h"
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
 #include <parser/sintax.h>
@@ -62,7 +63,6 @@ typedef struct{
 }t_code_ms;
 
 char command[BUFFER_CAPACITY];
-int generatorPid = 0;
 pthread_mutex_t mutex_planificacion;
 sem_t *sem_ansisop;
 t_list** solicitudes_sem;
