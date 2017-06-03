@@ -246,7 +246,9 @@ void leerConfiguracionKernel(t_kernel* kernel, char* path){
         kernel->sem_init = config_get_array_value(config, "SEM_INIT");
         int counter = 0; while (kernel->sem_ids[counter]) counter++;
         int initValue; sem_ansisop = realloc(sem_ansisop, counter * sizeof(sem_t));
+        solicitudes_sem = realloc(solicitudes_sem, counter * sizeof(t_list));
         for(int i=0; i<counter; i++){
+        	solicitudes_sem[i] = list_create();
         	initValue = atoi(kernel->sem_init[i]);
         	sem_init(&sem_ansisop[i], 0, initValue);
         }
@@ -356,18 +358,38 @@ void planificacion (socket_t server_socket){
             pcb->stackPointer = pages - kernel->stack_size;
     		list_add(pcb_ready, pcb);
 
-    		header_t header_code = protocol_header(OP_KE_SEND_CODE);
-    		header_code.msgsize = code->size;
-    		packet_t packet_code = protocol_packet(header_code, code->codigo);
-    		protocol_packet_send(packet_code, server_socket);
+    		int tam = 0;
+    		for (int pag = 0; pag < pcb->pagesCode; pag++){
+    			int size;
+    			if (pag < pcb->pagesCode - 1) size = kernel->page_size;
+    			else size = (code->size % kernel->page_size != 0);
 
-            header_t header_stack = protocol_header (OP_KE_SEND_STACK);
-            header_stack.msgsize = serial_pack_stack(pcb->stack, buffer);
-            packet_t packet_stack = protocol_packet (header_stack, buffer);
+    			header_t header_code = protocol_header(OP_ME_ALMBYTPAG);
+    			header_code.usrpid = pcb->idProcess;
+    			header_code.msgsize = serial_pack(buffer, "hhh", pag, 0, size);
+    			packet_t packet_code = protocol_packet(header_code, buffer);
+    			protocol_packet_send(packet_code, server_socket);
 
-            protocol_packet_send(packet_stack, server_socket);
-        }
-        else {
+    			memcpy(buffer, code->codigo+tam, size);
+    			packet_code = protocol_packet(header_code, buffer);
+    			protocol_packet_send(packet_code, server_socket);
+    			tam += size;
+
+    	        packetMemoria = protocol_packet_receive(server_socket);
+    		}
+
+    		header_t header_stack = protocol_header (OP_ME_ALMBYTPAG);
+    		header_stack.usrpid = pcb->idProcess;
+    		header_stack.msgsize = serial_pack(buffer, "hhh", pcb->stackPointer, 0, list_size(pcb->stack));
+    		packet_t packet_stack = protocol_packet (header_stack, buffer);
+    		protocol_packet_send(packet_stack, server_socket);
+
+    		header_stack.msgsize = serial_pack_stack(pcb->stack, buffer);
+    		packet_stack = protocol_packet (header_stack, buffer);
+    		protocol_packet_send(packet_stack, server_socket);
+
+    		packetMemoria = protocol_packet_receive(server_socket);
+        }else {
             pcb->exitCode = -1;
             list_add(pcb_exit, pcb);
         }
@@ -417,7 +439,6 @@ t_client* buscar_proceso (socket_t client){
 }
 
 void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
-
     unsigned char buffer[BUFFER_CAPACITY];
 
 	switch (cpu_syscall.header.opcode){
@@ -465,14 +486,25 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 											list_add(pcb_ready, pcb);
 										}else{
 											list_add(pcb_block, pcb);
+											list_add(solicitudes_sem[i], pcb);
 										}
 									}else{
 										sem_post(&sem_ansisop[i]);
 										sem_getvalue(&sem_ansisop[i], &semValue);
 										if (semValue>0){
-											//hay que tomar el primer pcb bloqueado que esperaba este semáforo
+											list_add(pcb_block, pcb);
+											list_add(solicitudes_sem[i], pcb);
+											t_pcb* pcbReady = list_remove(solicitudes_sem[i], 0);
+											list_add(pcb_ready, pcb);
+											list_add(solicitudes_sem[i], pcb);
+											bool getPcb (t_pcb *pcbExec){
+												return (pcbReady->idProcess == pcbExec->idProcess);
+											}
+											t_pcb* aux = list_remove_by_condition(pcb_block, (void*)getPcb);
+											free(aux);
 										}else{
 											list_add(pcb_block, pcb);
+											list_add(solicitudes_sem[i], pcb);
 										}
 									}
 

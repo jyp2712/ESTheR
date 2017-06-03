@@ -65,6 +65,7 @@ char command[BUFFER_CAPACITY];
 int generatorPid = 0;
 pthread_mutex_t mutex_planificacion;
 sem_t *sem_ansisop;
+t_list** solicitudes_sem;
 
 t_kernel* kernel;
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
