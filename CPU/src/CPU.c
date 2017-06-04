@@ -75,11 +75,7 @@ int recibirMensajesDeKernel(){
 		pcbActual = alloc(sizeof(t_pcb));
 		serial_unpack_pcb (pcbActual, packet.payload);
 
-		for(int i= 0; i < pcbActual->instructions; i++){
-			printf("%d\n%d\n", (pcbActual->indexCode+i)->start, (pcbActual->indexCode+i)->offset);
-		}
-
-		/*ejecutarPrograma();*/
+		ejecutarPrograma();
 		return true;
 	}
 	else{
@@ -108,36 +104,34 @@ char* pedirProximaInstruccionAMemoria(){
 	int longitud = instruccion->offset;
 
 	// Obtengo la dirección lógica de la instrucción a partir del índice de código:
-	t_solicitudLectura* lectura = alloc(sizeof(t_solicitudLectura));
-	lectura->idProcess = pcbActual->idProcess;
-	lectura->page = comienzo / tamanioPagina;
-	lectura->offset = comienzo % tamanioPagina;
-	lectura->size = longitud;
+	int page, offset, size;
+	page = comienzo / tamanioPagina;
+	offset = comienzo % tamanioPagina;
+	size = longitud;
 
-	log_inform("Solicitando Instrucción -> Pid: %d Pagina: %d - Offset: %d - Size: %d.", lectura->idProcess, lectura->page, lectura->offset, lectura->size);
+	log_inform("Solicitando Instrucción -> Pagina: %d - Offset: %d - Size: %d.", page, offset, size);
 
 	unsigned char buff[BUFFER_CAPACITY];
-	header_t header = protocol_header (OP_CPU_PROX_INST_REQUEST);
-	header.msgsize = serial_pack (buff, "hhhh", lectura->idProcess, lectura->page, lectura->offset, lectura->size);
+	header_t header = protocol_header (OP_ME_SOLBYTPAG);
+	header.msgsize = serial_pack (buff, "hhh", page, offset, size);
 	packet_t packet = protocol_packet (header, buff);
 	protocol_packet_send(packet, memoria_fd);
-
-	free(lectura);
 
 	//Recibo proxima instruccion a ejecutar
 	packet_t packet2 = protocol_packet_receive(memoria_fd);
 
-	if(packet2.header.opcode == OP_ME_PROX_INST_REQUEST_OK){
+	if(packet2.header.opcode == OP_RESPONSE){
 
-		serial_unpack(packet2.payload , "s", &proximaInstruccion);
+		serial_unpack(packet2.payload , "64s", &proximaInstruccion);
+		if(proximaInstruccion == NULL){
+
+			printf("Fallo al pedido de proxima instruccion");
+		}
+
 		printf("Instruccion obtenida: %s\n", proximaInstruccion);
 		return proximaInstruccion;
 	}
-	else if(packet2.header.opcode == OP_ME_PROX_INST_REQUEST_FAIL){
 
-		printf("Pedido de instruccion a memoria fallo\n");
-		return NULL;
-	}
 	return NULL;
 }
 
