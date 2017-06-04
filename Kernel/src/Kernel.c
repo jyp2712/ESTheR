@@ -32,7 +32,6 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     socket_set_add(cli_sock, &all_fds);
                     t_client* cliente = alloc(sizeof(t_client));
                     cliente->clientID = cli_sock;
-                    cliente->status = READY;
                     cliente->process= CPU;
                     list_add (cpu_conectadas, cliente);
                     log_inform("Received handshake from %s\n", get_process_name(cli_process));
@@ -300,7 +299,6 @@ void planificacion (socket_t server_socket){
 
         t_client* cpu = list_remove(cpu_conectadas, 0);
         protocol_packet_send(packet_pcb, cpu->clientID);
-        cpu->status = EXEC;
         cpu->pid = pcbToExec->idProcess;
 
         list_add(pcb_exec, pcbToExec);
@@ -367,7 +365,7 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 									char sem[20];
 									serial_unpack(packet_sem.payload, "20s", &sem);
 									int i=0;int semValue;
-									while(kernel->sem_ids){
+									while(kernel->sem_ids[i]){
 										if (strcmp(kernel->sem_ids[i], sem) == 0) break;
 									}
 									if (true/*packet_sem.header.opcode == wait*/){
@@ -392,6 +390,33 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 										}
 										t_pcb* aux = list_remove_by_condition(pcb_block, (void*)getPcb);
 										free(aux);
+									}
+
+									//restore(cpu);
+									break;
+		}
+		case OP_CPU_SHARED_VAR:{	t_pcb* pcb = alloc(sizeof(t_pcb));
+									serial_unpack_pcb(pcb, cpu_syscall.payload);
+									bool getPcb (t_pcb *pcbExec){
+										return (pcb->idProcess == pcbExec->idProcess);
+									}
+									t_pcb* aux = list_remove_by_condition(pcb_exec, (void*)getPcb);
+									free(aux);
+									packet_t packet_shared_var = protocol_packet_receive(cpu->clientID);
+									char shared_var[20];
+									serial_unpack(packet_shared_var.payload, "20s", &shared_var);
+									int i=0;
+									while(kernel->shared_vars[i]){
+										if (strcmp(kernel->sem_ids[i], shared_var) == 0) break;
+									}
+									if (true/*packet_shared_var.header.opcode == get shared value*/){
+										header_t header_shared_var = protocol_header(OP_KE_SEND_SHAREDVALUE, serial_pack(buffer, "h", kernel->shared_values[i]));
+										packet_t packet_shared_var = protocol_packet(header_shared_var, buffer);
+										protocol_packet_send(packet_shared_var, cpu->clientID);
+									}else{
+										int value;
+										serial_unpack(packet_shared_var.payload+20, "h", &value);
+										kernel->shared_values[i] = value;
 									}
 
 									//restore(cpu);

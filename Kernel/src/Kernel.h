@@ -53,7 +53,6 @@ typedef struct{
 typedef struct{
     socket_t clientID;
     unsigned char process;
-    int status;
     int pid;
 }t_client;
 
