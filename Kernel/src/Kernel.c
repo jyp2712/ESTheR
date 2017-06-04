@@ -25,6 +25,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     t_client* cliente = alloc(sizeof(t_client));
                     cliente->clientID = cli_sock;
                     cliente->process= CONSOLE;
+                    cliente->pids = list_create();
                     list_add (consolas_conectadas, cliente);
                     log_inform("Received handshake from %s\n", get_process_name(cli_process));
                 }
@@ -219,7 +220,7 @@ void gestion_datos_newPcb(packet_t program, t_client* console) {
     header_pid.usrpid = pcb->idProcess;
     packet_t packet = protocol_packet(header_pid);
     protocol_packet_send(packet, console->clientID);
-    console->pid = pcb->idProcess;
+    list_add(console->pids, (int*)pcb->idProcess);
 
     list_add (pcb_new, pcb);
 }
@@ -249,10 +250,10 @@ void planificacion (socket_t server_socket){
     		list_add(pcb_ready, pcb);
 
     		int tam = 0;
+			int size;
     		for (int pag = 0; pag < pcb->pagesCode; pag++){
-    			int size;
     			if (pag < pcb->pagesCode - 1) size = kernel->page_size;
-    			else size = (code->size % kernel->page_size != 0);
+    			else size = (code->size % kernel->page_size);
 
     			header_t header_code = protocol_header(OP_ME_ALMBYTPAG);
     			header_code.usrpid = pcb->idProcess;
@@ -261,7 +262,10 @@ void planificacion (socket_t server_socket){
     			protocol_packet_send(packet_code, server_socket);
 
     			memcpy(buffer, code->codigo+tam, size);
-    			packet_code = protocol_packet(header_code, buffer);
+    			unsigned char buff[BUFFER_CAPACITY];
+
+    			header_code.msgsize = serial_pack(buff, "s", buffer);
+    			packet_code = protocol_packet(header_code, buff);
     			protocol_packet_send(packet_code, server_socket);
     			tam += size;
 
@@ -299,7 +303,6 @@ void planificacion (socket_t server_socket){
 
         t_client* cpu = list_remove(cpu_conectadas, 0);
         protocol_packet_send(packet_pcb, cpu->clientID);
-        cpu->pid = pcbToExec->idProcess;
 
         list_add(pcb_exec, pcbToExec);
         list_add (cpu_executing, cpu);
@@ -341,7 +344,17 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 									list_add(pcb_exit, pcb);
 
 									bool getClient (t_client *console){
-										return (pcb->idProcess == console->pid);
+										bool ret = false;
+										int* pidConsole;
+										for(int i = 0; i < list_size(console->pids); i++){
+											pidConsole = list_get(console->pids, 0);
+											if ((int*)pcb->idProcess == pidConsole){
+												ret = true;
+												break;
+											}
+										}
+										free(pidConsole);
+										return ret;
 									}
 									t_client* console = list_find(consolas_conectadas, (void*)getClient);
 
