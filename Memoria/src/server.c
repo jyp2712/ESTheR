@@ -62,7 +62,7 @@ void cli_thread(client_t *client) {
 		case OP_ME_INIPRO:
 		{
 			int pages;
-			serial_unpack(packet.payload, "H", &pages);
+			serial_unpack(packet.payload, "h", &pages);
 
 			int res = set_pages(memory->page_table, packet.header.usrpid, pages);
 
@@ -74,7 +74,8 @@ void cli_thread(client_t *client) {
 		case OP_ME_SOLBYTPAG:
 		{
 			int page, offset, size;
-			serial_unpack(packet.payload, "HHH", &page, &offset, &size);
+
+			serial_unpack(packet.payload, "hhh", &page, &offset, &size);
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
 
@@ -85,6 +86,8 @@ void cli_thread(client_t *client) {
 				break;
 			}
 
+			printf("Instruccion obtenida: %s\n", buffer);
+
 			header = protocol_header_response(header, size);
 			packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
@@ -94,7 +97,7 @@ void cli_thread(client_t *client) {
 		{
 			int page, offset, size;
 
-			serial_unpack(packet.payload, "HHH", &page, &offset, &size);
+			serial_unpack(packet.payload, "hhh", &page, &offset, &size);
 			packet_t packet = protocol_packet_receive(client->socket);
 
 			int frame = get_frame(memory->page_table, packet.header.usrpid, page);
@@ -122,20 +125,6 @@ void cli_thread(client_t *client) {
 
 			packet_t packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
-			break;
-		}
-		case OP_CPU_PROX_INST_REQUEST:
-		{
-			t_solicitudLectura* direccionInstruccion;
-			// Recibo pagina, offset de inicio y tamaño de lo que tengo que leer y enviar
-			direccionInstruccion = alloc(sizeof(t_solicitudLectura));
-			serial_unpack(buffer, "hhhh", &direccionInstruccion->idProcess ,&direccionInstruccion->page, &direccionInstruccion->offset, &direccionInstruccion->size);
-
-			// Validar si se puede acceder a esa direccion y responder con Ok o Fail (mirar como esta en CPU)
-			header_t header = protocol_header(OP_ME_PROX_INST_REQUEST_OK);
-			header.msgsize = serial_pack(buffer, "s", "variables a, b");
-			packet_t packet2 = protocol_packet (header, buffer);
-			protocol_packet_send(packet2, client->socket);
 			break;
 		}
 		case OP_UNDEFINED:
