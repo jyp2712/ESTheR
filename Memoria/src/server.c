@@ -57,7 +57,7 @@ void cli_thread(client_t *client) {
 
 		if(!server.active) return;
 
-		log_report("packet header syspid %d usrpid %d opcode %d msgsize %d", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
+		log_info("packet header syspid %d usrpid %d opcode %d msgsize %d", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
 		{
