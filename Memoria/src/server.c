@@ -86,8 +86,6 @@ void cli_thread(client_t *client) {
 				break;
 			}
 
-			printf("Instruccion obtenida: %s\n", buffer);
-
 			header = protocol_header_response(header, size);
 			packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
