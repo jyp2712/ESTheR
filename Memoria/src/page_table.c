@@ -11,11 +11,22 @@ t_page_table *get_page_table(int rows, int size) {
 }
 
 int set_pages(t_page_table *page_table, int pid, int pages) {
+	if(pid <= 0) {
+		log_report("Invalid pid: %d. It must be a positive number.", pid);
+		return 0;
+	}
+	if(pages <= 0) {
+		log_report("Invalid requested pages: %d. It must be a positive number.", pages);
+		return 0;
+	}
 	int i, r = 0;
 	for(i = 0; i < page_rows; i++) {
 		if(page_table[i * COLS] == 0) r++;
 	}
-	if(r < pages) return 0;
+	if(r < pages) {
+		log_report("There is not %d free pages to be assigned.", pages);
+		return 0;
+	}
 
 	for(i = 0; i < page_rows && pages > 0; i++) {
 		if(page_table[i * COLS] == 0) {
@@ -27,14 +38,35 @@ int set_pages(t_page_table *page_table, int pid, int pages) {
 }
 
 int get_frame(t_page_table *page_table, int pid, int page) {
+	if(pid <= 0) {
+		log_report("Invalid pid: %d. It must be a positive number.", pid);
+		return 0;
+	}
+	if(page < 0) {
+		log_report("Invalid requested page: %d. It must be zero or a positive number.", page);
+		return 0;
+	}
+	if(page >= page_rows) {
+		log_report("Requested page: %d out of boundaries.", page);
+		return 0;
+	}
 	int i;
 	for(i = 0; i < page_rows; i++) {
 		if(page_table[i * COLS] == pid && page_table[i * COLS + 1] == page) return i;
 	}
-	return 1;
+	log_report("Can't find page: %d for pid: %d.", page, pid);
+	return 0;
 }
 
 int get_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
+	if(offset < 0) {
+		log_report("Invalid offset: %d. It must be zero or a positive number.", offset);
+		return 0;
+	}
+	if(size <= 0) {
+		log_report("Invalid size: %d. It must be a positive number.", size);
+		return 0;
+	}
 	int i, j = 0;
 	int base = frame * frame_size + offset;
 	for(i = base; i < base + size; i++) {
@@ -44,6 +76,14 @@ int get_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
 }
 
 int set_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
+	if(offset < 0) {
+		log_report("Invalid offset: %d. It must be zero or a positive number.", offset);
+		return 0;
+	}
+	if(size <= 0) {
+		log_report("Invalid size: %d. It must be a positive number.", size);
+		return 0;
+	}
 	int i, j = 0;
 	int base = frame * frame_size + offset;
 	for(i = base; i < base + size; i++) {

@@ -107,12 +107,13 @@ char* pedirProximaInstruccionAMemoria(){
 	int page, offset, size;
 	page = comienzo / tamanioPagina;
 	offset = comienzo % tamanioPagina;
-	size = longitud;
+	size = longitud+2;
 
 	log_inform("Solicitando Instrucción -> Pagina: %d - Offset: %d - Size: %d.", page, offset, size);
 
 	unsigned char buff[BUFFER_CAPACITY];
 	header_t header = protocol_header (OP_ME_SOLBYTPAG);
+	header.usrpid = pcbActual->idProcess;
 	header.msgsize = serial_pack (buff, "hhh", page, offset, size);
 	packet_t packet = protocol_packet (header, buff);
 	protocol_packet_send(packet, memoria_fd);
@@ -122,7 +123,7 @@ char* pedirProximaInstruccionAMemoria(){
 
 	if(packet2.header.opcode == OP_RESPONSE){
 
-		serial_unpack(packet2.payload , "64s", &proximaInstruccion);
+		serial_unpack(packet2.payload , "64s", proximaInstruccion);
 		if(proximaInstruccion == NULL){
 
 			printf("Fallo al pedido de proxima instruccion");
