@@ -115,7 +115,14 @@ void cli_thread(client_t *client) {
 		case OP_ME_ASIPAGPRO:
 			break;
 		case OP_ME_FINPRO:
+		{
+			int res = clear_pages(memory->page_table, packet.header.usrpid);
+
+			header = protocol_header_response(header, serial_pack(buffer, "h", res));
+			packet = protocol_packet(header, buffer);
+			protocol_packet_send(packet, client->socket);
 			break;
+		}
 		case OP_CPU_TAMPAG_REQUEST:
 		{
 			header_t header = protocol_header(OP_CPU_TAMPAG_REQUEST);

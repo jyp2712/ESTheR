@@ -37,6 +37,22 @@ int set_pages(t_page_table *page_table, int pid, int pages) {
 	return 1;
 }
 
+int clear_pages(t_page_table *page_table, int pid) {
+	if(pid <= 0) {
+		log_report("Invalid pid: %d. It must be a positive number.", pid);
+		return 0;
+	}
+	int i = 0;
+
+	for(i = 0; i < page_rows; i++) {
+		if(page_table[i * COLS] == pid) {
+			page_table[i * COLS] = 0;
+			page_table[i * COLS + 1] = 0;
+		}
+	}
+	return 1;
+}
+
 int get_frame(t_page_table *page_table, int pid, int page) {
 	if(pid <= 0) {
 		log_report("Invalid pid: %d. It must be a positive number.", pid);
