@@ -39,10 +39,10 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     list_add (cpu_conectadas, cliente);
                     log_inform("Received handshake from %s", get_process_name(cli_process));
 
-                    log_inform("Envio stack size (%i) a CPU", config->stack_size);
+                    log_inform("Envio stack size (%i) y tamaño de pagina (%i) a CPU", config->stack_size, config->page_size);
                     unsigned char buff[BUFFER_CAPACITY];
                     header_t header = protocol_header(OP_KE_SEND_STACK_SIZE);
-                    header.msgsize = serial_pack(buff, "h", config->stack_size);
+                    header.msgsize = serial_pack(buff, "hh", config->stack_size, config->page_size);
                     packet_t packet = protocol_packet(header, buff);
                     protocol_packet_send(packet, cli_sock);
                 }

@@ -10,9 +10,9 @@ int main(int argc, char **argv) {
 	leerConfiguracionCPU(cpu, argv[1]);
 
 	title("Conexión");
-	conectarAMemoriaYRecibirTamPag();
+	conectarAMemoria();
 
-	conectarAKernelYRecibirStackSize();
+	conectarAKernelYRecibirStackSizeYTamPag();
 
 	while(true){
 		recibirMensajesDeKernel();
@@ -43,38 +43,27 @@ void recibirMensajesDeKernel(){
 		}
 }
 
-void conectarAMemoriaYRecibirTamPag(){
+void conectarAMemoria(){
 	printf("Estableciendo conexión con la Memoria...\n");
 	memoria_fd = socket_connect(cpu->ip_memoria, cpu->puerto_memoria);
 	protocol_handshake_send(memoria_fd);
 	printf("\33[2K\rConectado a la Memoria en %s:%s\n", cpu->ip_memoria, cpu->puerto_memoria);
 
-	//Pedir tamPag a memoria
-	log_inform("Pido tamanio de pagina a memoria");
-
-	header_t header = protocol_header (OP_CPU_TAMPAG_REQUEST);
-	packet_t packet1 = protocol_packet (header);
-	protocol_packet_send(packet1, memoria_fd);
-
-	//Recibir tamPag de memoria
-
-	packet_t packet2 = protocol_packet_receive(memoria_fd);
-	serial_unpack(packet2.payload, "h", &tamanioPagina);
-
-	printf("Tamanio pagina obtenida: %i\n", tamanioPagina);
-	log_inform("Tamanio pagina obtenida: %i", tamanioPagina);
 }
 
-void conectarAKernelYRecibirStackSize(){
+void conectarAKernelYRecibirStackSizeYTamPag(){
 	printf("Estableciendo conexión con el Kernel...\n");
 	kernel_fd = socket_connect(cpu->ip_kernel, cpu->puerto_kernel);
 	protocol_handshake_send(kernel_fd);
 	printf("\33[2K\rConectado al Kernel en %s:%s\n", cpu->ip_kernel, cpu->puerto_kernel);
 
 	packet_t packet = protocol_packet_receive(kernel_fd);
-	serial_unpack(packet.payload, "h", &stackSize);
+	serial_unpack(packet.payload, "hh", &stackSize, &tamanioPagina);
 	log_inform("Tamaño stack recibido: %i", stackSize);
 	printf("Tamaño stack recibido: %i\n", stackSize);
+
+	printf("Tamanio pagina obtenida: %i\n", tamanioPagina);
+	log_inform("Tamanio pagina obtenida: %i", tamanioPagina);
 
 }
 

@@ -116,15 +116,6 @@ void cli_thread(client_t *client) {
 			break;
 		case OP_ME_FINPRO:
 			break;
-		case OP_CPU_TAMPAG_REQUEST:
-		{
-			header_t header = protocol_header(OP_CPU_TAMPAG_REQUEST);
-			header.msgsize = serial_pack(buffer, "h", memory_get_frame_size());
-
-			packet_t packet = protocol_packet(header, buffer);
-			protocol_packet_send(packet, client->socket);
-			break;
-		}
 		case OP_UNDEFINED:
 		default:
 			remove_client(client);
