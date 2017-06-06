@@ -28,27 +28,9 @@
 #include <arpa/inet.h>
 #include <sys/select.h>
 #include <pthread.h>
+#include "configuration.h"
 
 enum {NEW, READY, EXEC, BLOCK, EXIT};
-
-typedef struct{
-    char* puerto_prog;
-    char* puerto_cpu;
-    char* ip_memoria;
-    char* puerto_memoria;
-    char* ip_fs;
-    char* puerto_fs;
-    int quantum;
-    int quantum_sleep;
-    char* algoritmo;
-    int grado_multiprog;
-    char** sem_ids;
-    char** sem_init;
-    char** shared_vars;
-    int* shared_values;
-    int stack_size;
-    int page_size;
-}t_kernel;
 
 typedef struct{
     socket_t clientID;
@@ -63,15 +45,10 @@ typedef struct{
 
 char command[BUFFER_CAPACITY];
 pthread_mutex_t mutex_planificacion;
-sem_t *sem_ansisop;
-t_list** solicitudes_sem;
 
-t_kernel* kernel;
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
 t_list *consolas_conectadas, *consolas_desconectadas, *cpu_conectadas, *cpu_executing;
 t_list *deadpid, *codes_ms;
-
-void leerConfiguracionKernel(t_kernel*, char* path);
 
 t_pcb* crear_pcb_proceso (t_metadata_program*);
 
