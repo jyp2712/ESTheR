@@ -143,12 +143,15 @@ char* pedirProximaInstruccionAMemoria(){
 	packet_t packet2 = protocol_packet_receive(memoria_fd);
 
 	if(packet2.header.opcode == OP_RESPONSE){
+
 		strcpy(proximaInstruccion, (char*)packet2.payload);
-		if(proximaInstruccion == NULL){
+		char* instruccionLimpia = string_substring(proximaInstruccion, 0, size-1);
+
+		if(instruccionLimpia == NULL){
 			printf("Fallo al pedido de proxima instruccion");
 		} else {
-		printf("Instruccion Obtenida: %s\n", proximaInstruccion);
-		return proximaInstruccion;
+		printf("Instruccion Obtenida: %s\n", instruccionLimpia);
+		return instruccionLimpia;
 		}
 	}
 	return NULL;
