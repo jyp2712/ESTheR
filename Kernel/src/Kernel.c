@@ -27,7 +27,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     cliente->process= CONSOLE;
                     cliente->pids = list_create();
                     list_add (consolas_conectadas, cliente);
-                    log_inform("Received handshake from %s\n", get_process_name(cli_process));
+                    log_inform("Received handshake from %s", get_process_name(cli_process));
                 }
                 else if(cli_process == CPU){
                     socket_set_add(cli_sock, &all_fds);
@@ -35,7 +35,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     cliente->clientID = cli_sock;
                     cliente->process= CPU;
                     list_add (cpu_conectadas, cliente);
-                    log_inform("Received handshake from %s\n", get_process_name(cli_process));
+                    log_inform("Received handshake from %s", get_process_name(cli_process));
 
                     log_inform("Envio stack size (%i) a CPU", kernel->stack_size);
                     unsigned char buff[BUFFER_CAPACITY];
@@ -246,7 +246,6 @@ void planificacion (socket_t server_socket){
         serial_unpack(packetMemoria.payload, "h", &res);
         if (res) {
             pcb->pagesCode = pages - kernel->stack_size;
-            pcb->stackPointer = pages - kernel->stack_size;
     		list_add(pcb_ready, pcb);
 
     		int tam = 0;
@@ -262,10 +261,9 @@ void planificacion (socket_t server_socket){
     			protocol_packet_send(packet_code, server_socket);
 
     			memcpy(buffer, code->codigo+tam, size);
-    			unsigned char buff[BUFFER_CAPACITY];
 
-    			header_code.msgsize = serial_pack(buff, "s", buffer);
-    			packet_code = protocol_packet(header_code, buff);
+    			header_code.msgsize = size;
+    			packet_code = protocol_packet(header_code, buffer);
     			protocol_packet_send(packet_code, server_socket);
     			tam += size;
 
@@ -292,10 +290,6 @@ void planificacion (socket_t server_socket){
     while (!list_is_empty(pcb_ready) && !list_is_empty(cpu_conectadas)){
         unsigned char buff[BUFFER_CAPACITY];
         t_pcb* pcbToExec = list_remove(pcb_ready, 0);
-
-        for(int i= 0; i < pcbToExec->instructions; i++){
-        	printf("%d\n%d\n", (pcbToExec->indexCode+i)->start, (pcbToExec->indexCode+i)->offset);
-        }
 
         header_t header_pcb = protocol_header (OP_KE_SEND_PCB);
         header_pcb.msgsize = serial_pack_pcb(pcbToExec, buff);

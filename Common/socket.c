@@ -128,7 +128,7 @@ static size_t sendall(socket_t sockfd, const unsigned char *buf, size_t len) {
 
 size_t socket_send_string(const char *message, socket_t sockfd) {
 	size_t bytes_sent = sendall(sockfd, (const unsigned char *) message, strlen(message) + 1);
-	log_inform("Sent string: \"%s\"", message);
+	//log_inform("Sent string: \"%s\"", message);
 
 	return bytes_sent;
 }
@@ -136,7 +136,7 @@ size_t socket_send_string(const char *message, socket_t sockfd) {
 size_t socket_send_bytes(const unsigned char *message, size_t size, socket_t sockfd) {
 	size_t bytes_sent = sendall(sockfd, message, size);
 	if(bytes_sent > 0) {
-		log_inform("Sent %ld bytes", bytes_sent);
+		//log_inform("Sent %ld bytes", bytes_sent);
 	}
 
 	return bytes_sent;
@@ -164,7 +164,7 @@ static ssize_t recvall(socket_t sockfd, unsigned char *buf, size_t len) {
 ssize_t socket_receive_string(char *message, socket_t sockfd) {
 	ssize_t bytes_received = recvall(sockfd, (unsigned char *) message, BUFFER_CAPACITY);
 	if(bytes_received > 0) {
-		log_inform("Received string: \"%s\"", message);
+		//log_inform("Received string: \"%s\"", message);
 	}
 
 	return bytes_received;
@@ -173,7 +173,7 @@ ssize_t socket_receive_string(char *message, socket_t sockfd) {
 ssize_t socket_receive_bytes(unsigned char *message, size_t size, socket_t sockfd) {
 	ssize_t bytes_received = recvall(sockfd, message, size);
 	if(bytes_received > 0) {
-		log_inform("Received %ld bytes", bytes_received);
+		//log_inform("Received %ld bytes", bytes_received);
 	}
 
 	return bytes_received;

@@ -22,6 +22,7 @@ typedef struct{
 	char* puerto_memoria;
 }t_cpu;
 
+bool procesoBloqueado = false;
 bool huboStackOver = false;
 bool finPrograma = false;
 char proximaInstruccion[BUFFER_CAPACITY];
@@ -32,6 +33,7 @@ int stackSize;
 t_pcb* pcbActual;
 t_cpu* cpu;
 
+int verificarTerminarEjecucion();
 void conectarAMemoriaYRecibirTamPag();
 void conectarAKernelYRecibirStackSize();
 void finalizarCPU();
@@ -40,7 +42,7 @@ bool esArgumento(t_nombre_variable identificador_variable);
 char* pedirProximaInstruccionAMemoria();
 void ejecutarPrograma();
 void pedirTamPagAMemoria();
-int recibirMensajesDeKernel();
+void recibirMensajesDeKernel();
 void leerConfiguracionCPU(t_cpu* cpu, char* path);
 t_puntero definirVariable(t_nombre_variable identificador_variable);
 t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable);
