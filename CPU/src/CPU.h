@@ -50,6 +50,9 @@ t_valor_variable dereferenciar(t_puntero direccion_variable);
 void asignar(t_puntero direccion_variable, t_valor_variable valor);
 void finalizar(void);
 void llamarSinRetorno(t_nombre_etiqueta etiqueta);
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
+void retornar(t_valor_variable retorno);
+void irAlLabel(t_nombre_etiqueta etiqueta);
 
 // Estructuras funcionesAnSISOP
 AnSISOP_funciones funcionesAnSISOP = {
@@ -59,10 +62,10 @@ AnSISOP_funciones funcionesAnSISOP = {
 		.AnSISOP_asignar					= asignar,
 		//.AnSISOP_obtenerValorCompartida	= obtenerValorCompartida,
 		//.AnSISOP_asignarValorCompartida	= asignarValorCompartida,
-		//.AnSISOP_irAlLabel				= irAlLabel,
-		//.AnSISOP_llamarConRetorno			= llamarConRetorno,
+		.AnSISOP_irAlLabel					= irAlLabel,
+		.AnSISOP_llamarConRetorno			= llamarConRetorno,
 		.AnSISOP_llamarSinRetorno			= llamarSinRetorno,
-		//.AnSISOP_retornar					= retornar,
+		.AnSISOP_retornar					= retornar,
 		.AnSISOP_finalizar					= finalizar,
 };
 

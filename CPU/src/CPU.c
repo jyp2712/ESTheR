@@ -160,7 +160,7 @@ t_stack* t_stack_create(){
 	t_stack* stack = alloc(sizeof(t_stack));
 	stack->args = list_create();
 	stack->vars = list_create();
-	stack->retPos = 0;
+	stack->retPos = -1;
 	stack->retVar.offset = 0;
 	stack->retVar.page = 0;
 	stack->retVar.size = 0;
@@ -333,13 +333,23 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor){
 void irAlLabel(t_nombre_etiqueta etiqueta){
 
 	log_inform("ANSISOP_irALabel %s", etiqueta);
-	t_puntero_instruccion numeroInstr = metadata_buscar_etiqueta(etiqueta, pcbActual->indexTag, pcbActual->tags);
-	log_inform("Instruccion del irALAbel: %d", numeroInstr);
-	if(numeroInstr == -1){
-		log_report("No se encontro la etiqueta");
-		return;
-	}
-	pcbActual->PC = numeroInstr;
+
+}
+
+void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
+
+	log_inform("ANSISOP_llamarConRetorno etiqueta: %s, retornar: %d", etiqueta, donde_retornar);
+	t_stack * nuevaLineaStackEjecucionActual;
+	nuevaLineaStackEjecucionActual = t_stack_create();
+	nuevaLineaStackEjecucionActual->retVar.page = donde_retornar / tamanioPagina;;
+	nuevaLineaStackEjecucionActual->retVar.offset = donde_retornar % tamanioPagina;
+	nuevaLineaStackEjecucionActual->retVar.size = sizeof(int);
+	nuevaLineaStackEjecucionActual->retPos = pcbActual->PC;
+
+	// La agrego a la lista, se encuentra en la ultima posicion.
+	list_add(pcbActual->stack, nuevaLineaStackEjecucionActual);
+
+	irAlLabel(etiqueta);
 }
 
 void llamarSinRetorno(t_nombre_etiqueta etiqueta){
@@ -349,6 +359,18 @@ void llamarSinRetorno(t_nombre_etiqueta etiqueta){
 	nuevaLineaStack->retPos = pcbActual->PC;
 	list_add(pcbActual->stack, nuevaLineaStack);
 	irAlLabel(etiqueta);
+}
+
+void retornar(t_valor_variable retorno){
+
+	log_inform("ANSISOP_retornar");
+	// Tomo contexto actual:
+	t_stack* registroActual = list_get(pcbActual->stack, pcbActual->stack->elements_count -1);
+	// Calculo la dirección de retorno a partir de retVar:
+	t_puntero offset_absoluto = (registroActual->retVar.page * tamanioPagina) + registroActual->retVar.offset;
+	asignar(offset_absoluto, retorno);
+
+	finalizar();
 }
 
 void finalizar(void){
