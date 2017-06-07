@@ -1,13 +1,15 @@
 #include "Kernel.h"
+#include "configuration.h"
 
 int generatorPid = 0;
+t_kernel* config;
 
 void init_server(socket_t mem_fd, socket_t fs_fd) {
 
     fdset_t read_fds, all_fds = socket_set_create();
     socket_set_add(mem_fd, &all_fds);
 //  socket_set_add(fs_fd, &all_fds);
-    socket_t sv_sock = socket_init(NULL, kernel->puerto_prog);
+    socket_t sv_sock = socket_init(NULL, config->puerto_prog);
     socket_set_add(sv_sock, &all_fds);
 
     while(true) {
@@ -27,7 +29,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     cliente->process= CONSOLE;
                     cliente->pids = list_create();
                     list_add (consolas_conectadas, cliente);
-                    log_inform("Received handshake from %s\n", get_process_name(cli_process));
+                    log_inform("Received handshake from %s", get_process_name(cli_process));
                 }
                 else if(cli_process == CPU){
                     socket_set_add(cli_sock, &all_fds);
@@ -35,19 +37,20 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                     cliente->clientID = cli_sock;
                     cliente->process= CPU;
                     list_add (cpu_conectadas, cliente);
-                    log_inform("Received handshake from %s\n", get_process_name(cli_process));
+                    log_inform("Received handshake from %s", get_process_name(cli_process));
 
-                    log_inform("Envio stack size (%i) a CPU", kernel->stack_size);
+                    log_inform("Envio stack size (%i) y tamaño de pagina (%i) a CPU", config->stack_size, config->page_size);
                     unsigned char buff[BUFFER_CAPACITY];
                     header_t header = protocol_header(OP_KE_SEND_STACK_SIZE);
-                    header.msgsize = serial_pack(buff, "h", kernel->stack_size);
+                    header.msgsize = serial_pack(buff, "hh", config->stack_size, config->page_size);
                     packet_t packet = protocol_packet(header, buff);
                     protocol_packet_send(packet, cli_sock);
                 }
                 else {
                     socket_close(cli_sock);
                 }
-            } else {
+            }
+            else {
             	t_client* process = buscar_proceso (i);
             		if (process->process == CONSOLE){
             			packet_t program = protocol_packet_receive(process->clientID);
@@ -79,11 +82,11 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
 
 int main(int argc, char **argv) {
     guard(argc == 2, "Falta indicar ruta de archivo de configuración");
+    config = get_config(argv[1]);
+    //config = get_config("metadata");
+
     set_current_process(KERNEL);
     title("KERNEL");
-
-    kernel = malloc(sizeof(t_kernel));
-    leerConfiguracionKernel(kernel, argv[1]);
 
 	pthread_mutex_init(&mutex_planificacion, NULL);
 	pcb_ready = list_create();
@@ -99,12 +102,12 @@ int main(int argc, char **argv) {
 
     title("Conexión");
     printf("Estableciendo conexión con la Memoria...");
-    socket_t memoria_fd = socket_connect(kernel->ip_memoria, kernel->puerto_memoria);
+    socket_t memoria_fd = socket_connect(config->ip_memoria, config->puerto_memoria);
     protocol_handshake_send(memoria_fd);
-    printf("\33[2K\rConectado a la Memoria en %s:%s\n", kernel->ip_memoria, kernel->puerto_memoria);
+    printf("\33[2K\rConectado a la Memoria en %s:%s\n", config->ip_memoria, config->puerto_memoria);
 
     packet_t packet = protocol_packet_receive(memoria_fd);
-    serial_unpack(packet.payload, "h", &kernel->page_size);
+    serial_unpack(packet.payload, "h", &config->page_size);
 
 //    Lo comento para que no joda. Total por ahora no lo necesitamos.
 //    printf("Estableciendo conexión con el File System...");
@@ -115,57 +118,8 @@ int main(int argc, char **argv) {
     thread_create(terminal);
     init_server(memoria_fd, fs_fd);
 
-    free(kernel);
+    free(config);
     return 0;
-}
-
-void leerConfiguracionKernel(t_kernel* kernel, char* path){
-
-        t_config* config = config_create(path);
-
-        kernel->puerto_prog = config_get_string_value(config, "PUERTO_PROG");
-        kernel->puerto_cpu = config_get_string_value(config, "PUERTO_CPU");
-        kernel->ip_memoria = config_get_string_value(config, "IP_MEMORIA");
-        kernel->puerto_memoria = config_get_string_value(config, "PUERTO_MEMORIA");
-        kernel->ip_fs = config_get_string_value(config, "IP_FS");
-        kernel->puerto_fs = config_get_string_value(config, "PUERTO_FS");
-        kernel->quantum = config_get_int_value(config, "QUANTUM");
-        kernel->quantum_sleep = config_get_int_value(config, "QUANTUM_SLEEP");
-        kernel->algoritmo = config_get_string_value(config, "ALGORITMO");
-        kernel->grado_multiprog = config_get_int_value(config, "GRADO_MULTIPROG");
-        kernel->sem_ids = config_get_array_value(config, "SEM_IDS");
-        kernel->sem_init = config_get_array_value(config, "SEM_INIT");
-        int counter = 0; while (kernel->sem_ids[counter]) counter++;
-        int initValue; sem_ansisop = realloc(sem_ansisop, counter * sizeof(sem_t));
-        solicitudes_sem = realloc(solicitudes_sem, counter * sizeof(t_list));
-        for(int i=0; i<counter; i++){
-        	solicitudes_sem[i] = list_create();
-        	initValue = atoi(kernel->sem_init[i]);
-        	sem_init(&sem_ansisop[i], 0, initValue);
-        }
-        kernel->shared_vars = config_get_array_value (config, "SHARED_VARS");
-        counter = 0; while (kernel->shared_vars[counter]) counter++;
-        kernel->shared_values = realloc (kernel->shared_values, counter * sizeof(int));
-        for(int i=0; i<counter; i++){
-            kernel->shared_values[i] = 0;
-        }
-        kernel->stack_size = config_get_int_value(config, "STACK_SIZE");
-
-        title("Configuración");
-        printf("PUERTO_PROG: %s\n", kernel->puerto_prog);
-        printf("PUERTO_CPU: %s\n", kernel->puerto_cpu);
-        printf("IP_MEMORIA: %s\n", kernel->ip_memoria);
-        printf("PUERTO_MEMORIA: %s\n", kernel->puerto_memoria);
-        printf("IP_FS: %s\n", kernel->ip_fs);
-        printf("PUERTO_FS: %s\n", kernel->puerto_fs);
-        printf("QUANTUM: %i\n", kernel->quantum);
-        printf("QUANTUM_SLEEP: %i\n", kernel->quantum_sleep);
-        printf("ALGORITMO: %s\n", kernel->algoritmo);
-        printf("GRADO_MULTIPROG: %i\n", kernel->grado_multiprog);
-        printf("SEM_IDS:[%s, %s ,%s]\n", kernel->sem_ids[0], kernel->sem_ids[1], kernel->sem_ids[2]);
-        printf("SEM_INIT:[%s, %s ,%s]\n", kernel->sem_init[0], kernel->sem_init[1], kernel->sem_init[2]);
-        printf("SHARED_VARS:[!%s, !%s ,!%s]\n", kernel->shared_vars[0], kernel->shared_vars[1], kernel->shared_vars[2]);
-        printf("STACK_SIZE: %i\n", kernel->stack_size);
 }
 
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {
@@ -176,7 +130,7 @@ t_pcb* crear_pcb_proceso(t_metadata_program* program) {
     element->PC = program->instruccion_inicio;
     element->status = NEW;
     element->pagesCode = 0;
-    element->quantum = kernel->quantum;
+    element->quantum = config->quantum;
     element->instructions = program->instrucciones_size;
     element->indexCode = program->instrucciones_serializado;
 
@@ -228,10 +182,10 @@ void gestion_datos_newPcb(packet_t program, t_client* console) {
 void planificacion (socket_t server_socket){
     unsigned char buffer[BUFFER_CAPACITY];
 
-	if ((list_size(pcb_ready) + list_size(pcb_exec) + list_size(pcb_block)) < kernel->grado_multiprog && !list_is_empty(pcb_new)){
+	if ((list_size(pcb_ready) + list_size(pcb_exec) + list_size(pcb_block)) < config->grado_multiprog && !list_is_empty(pcb_new)){
 		t_code_ms* code = list_remove(codes_ms, 0);
 		//Obtengo paginas requeridas para el proceso y se lo solicito a memoria
-        int pages = (code->size/kernel->page_size) + (code->size % kernel->page_size != 0) + kernel->stack_size;
+        int pages = (code->size/config->page_size) + (code->size % config->page_size != 0) + config->stack_size;
 
         t_pcb* pcb = list_remove (pcb_new, 0);
 
@@ -240,20 +194,21 @@ void planificacion (socket_t server_socket){
         packet_t packetMemoria = protocol_packet(headerMemoria, buffer);
         protocol_packet_send(packetMemoria, server_socket);
 
+        log_inform("Usrpid: %d and pages requested: %d.", headerMemoria.usrpid, pages);
+
         //Espero que responda memoria, si está OK (=0), continuo
         packetMemoria = protocol_packet_receive(server_socket);
         int res;
         serial_unpack(packetMemoria.payload, "h", &res);
         if (res) {
-            pcb->pagesCode = pages - kernel->stack_size;
-            pcb->stackPointer = pages - kernel->stack_size;
+            pcb->pagesCode = pages - config->stack_size;
     		list_add(pcb_ready, pcb);
 
     		int tam = 0;
 			int size;
     		for (int pag = 0; pag < pcb->pagesCode; pag++){
-    			if (pag < pcb->pagesCode - 1) size = kernel->page_size;
-    			else size = (code->size % kernel->page_size);
+    			if (pag < pcb->pagesCode - 1) size = config->page_size;
+    			else size = (code->size % config->page_size);
 
     			header_t header_code = protocol_header(OP_ME_ALMBYTPAG);
     			header_code.usrpid = pcb->idProcess;
@@ -262,10 +217,9 @@ void planificacion (socket_t server_socket){
     			protocol_packet_send(packet_code, server_socket);
 
     			memcpy(buffer, code->codigo+tam, size);
-    			unsigned char buff[BUFFER_CAPACITY];
 
-    			header_code.msgsize = serial_pack(buff, "s", buffer);
-    			packet_code = protocol_packet(header_code, buff);
+    			header_code.msgsize = size;
+    			packet_code = protocol_packet(header_code, buffer);
     			protocol_packet_send(packet_code, server_socket);
     			tam += size;
 
@@ -292,10 +246,6 @@ void planificacion (socket_t server_socket){
     while (!list_is_empty(pcb_ready) && !list_is_empty(cpu_conectadas)){
         unsigned char buff[BUFFER_CAPACITY];
         t_pcb* pcbToExec = list_remove(pcb_ready, 0);
-
-        for(int i= 0; i < pcbToExec->instructions; i++){
-        	printf("%d\n%d\n", (pcbToExec->indexCode+i)->start, (pcbToExec->indexCode+i)->offset);
-        }
 
         header_t header_pcb = protocol_header (OP_KE_SEND_PCB);
         header_pcb.msgsize = serial_pack_pcb(pcbToExec, buff);
@@ -378,26 +328,26 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 									char sem[20];
 									serial_unpack(packet_sem.payload, "20s", &sem);
 									int i=0;int semValue;
-									while(kernel->sem_ids[i]){
-										if (strcmp(kernel->sem_ids[i], sem) == 0) break;
+									while(config->sem_ids[i]){
+										if (strcmp(config->sem_ids[i], sem) == 0) break;
 									}
 									if (true/*packet_sem.header.opcode == wait*/){
-										sem_wait(&sem_ansisop[i]);
-										sem_getvalue(&sem_ansisop[i], &semValue);
+										sem_wait(&config->sem_ansisop[i]);
+										sem_getvalue(&config->sem_ansisop[i], &semValue);
 										if (semValue>0){
 											list_add(pcb_ready, pcb);
 										}else{
 											list_add(pcb_block, pcb);
-											list_add(solicitudes_sem[i], pcb);
+											list_add(config->solicitudes_sem[i], pcb);
 										}
 									}else{
-										sem_post(&sem_ansisop[i]);
-										sem_getvalue(&sem_ansisop[i], &semValue);
+										sem_post(&config->sem_ansisop[i]);
+										sem_getvalue(&config->sem_ansisop[i], &semValue);
 										list_add(pcb_block, pcb);
-										list_add(solicitudes_sem[i], pcb);
-										t_pcb* pcbReady = list_remove(solicitudes_sem[i], 0);
+										list_add(config->solicitudes_sem[i], pcb);
+										t_pcb* pcbReady = list_remove(config->solicitudes_sem[i], 0);
 										list_add(pcb_ready, pcb);
-										list_add(solicitudes_sem[i], pcb);
+										list_add(config->solicitudes_sem[i], pcb);
 										bool getPcb (t_pcb *pcbExec){
 											return (pcbReady->idProcess == pcbExec->idProcess);
 										}
@@ -419,17 +369,17 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 									char shared_var[20];
 									serial_unpack(packet_shared_var.payload, "20s", &shared_var);
 									int i=0;
-									while(kernel->shared_vars[i]){
-										if (strcmp(kernel->sem_ids[i], shared_var) == 0) break;
+									while(config->shared_vars[i]){
+										if (strcmp(config->sem_ids[i], shared_var) == 0) break;
 									}
 									if (true/*packet_shared_var.header.opcode == get shared value*/){
-										header_t header_shared_var = protocol_header(OP_KE_SEND_SHAREDVALUE, serial_pack(buffer, "h", kernel->shared_values[i]));
+										header_t header_shared_var = protocol_header(OP_KE_SEND_SHAREDVALUE, serial_pack(buffer, "h", config->shared_values[i]));
 										packet_t packet_shared_var = protocol_packet(header_shared_var, buffer);
 										protocol_packet_send(packet_shared_var, cpu->clientID);
 									}else{
 										int value;
 										serial_unpack(packet_shared_var.payload+20, "h", &value);
-										kernel->shared_values[i] = value;
+										config->shared_values[i] = value;
 									}
 
 									//restore(cpu);

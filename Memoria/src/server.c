@@ -57,7 +57,7 @@ void cli_thread(client_t *client) {
 
 		if(!server.active) return;
 
-		log_info("packet header syspid %d usrpid %d opcode %d msgsize %d", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
+		log_inform("packet header syspid %d usrpid %d opcode %d msgsize %d", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
 		switch(packet.header.opcode) {
 		case OP_ME_INIPRO:
 		{
@@ -115,13 +115,11 @@ void cli_thread(client_t *client) {
 		case OP_ME_ASIPAGPRO:
 			break;
 		case OP_ME_FINPRO:
-			break;
-		case OP_CPU_TAMPAG_REQUEST:
 		{
-			header_t header = protocol_header(OP_CPU_TAMPAG_REQUEST);
-			header.msgsize = serial_pack(buffer, "h", memory_get_frame_size());
+			int res = clear_pages(memory->page_table, packet.header.usrpid);
 
-			packet_t packet = protocol_packet(header, buffer);
+			header = protocol_header_response(header, serial_pack(buffer, "h", res));
+			packet = protocol_packet(header, buffer);
 			protocol_packet_send(packet, client->socket);
 			break;
 		}
