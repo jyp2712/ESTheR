@@ -58,4 +58,6 @@ void planificacion(socket_t);
 
 t_client* buscar_proceso (socket_t);
 
+void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket);
+
 #endif /* KERNEL_H_ */
