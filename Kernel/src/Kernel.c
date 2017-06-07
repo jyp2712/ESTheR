@@ -224,8 +224,6 @@ void planificacion (socket_t server_socket){
 
     			memcpy(buffer, code->codigo+tam, size);
 
-    			log_inform("%s", buffer);
-
     			header_code.msgsize = size;
     			packet_code = protocol_packet(header_code, buffer);
     			protocol_packet_send(packet_code, server_socket);
