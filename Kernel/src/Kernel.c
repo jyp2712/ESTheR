@@ -70,6 +70,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                 	if (process->process == CPU){
                 		pthread_mutex_lock(&mutex_planificacion);
             			packet_t cpu_call = protocol_packet_receive(process->clientID);
+            			gestion_syscall(cpu_call, process, mem_fd);
             			pthread_mutex_unlock(&mutex_planificacion);
                 	}
             }
@@ -284,7 +285,8 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
     unsigned char buffer[BUFFER_CAPACITY];
 
 	switch (cpu_syscall.header.opcode){
-		case OP_CPU_PROGRAM_END:{ 	t_pcb* pcb = alloc(sizeof(t_pcb));
+		case OP_CPU_PROGRAM_END:{
+									t_pcb* pcb = alloc(sizeof(t_pcb));
 									serial_unpack_pcb(pcb, cpu_syscall.payload);
 									bool getPcb (t_pcb *pcbExec){
 									return (pcb->idProcess == pcbExec->idProcess);

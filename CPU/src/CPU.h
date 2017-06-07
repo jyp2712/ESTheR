@@ -34,8 +34,8 @@ t_pcb* pcbActual;
 t_cpu* cpu;
 
 int verificarTerminarEjecucion();
-void conectarAMemoriaYRecibirTamPag();
-void conectarAKernelYRecibirStackSize();
+void conectarAMemoria();
+void conectarAKernelYRecibirStackSizeYTamPag();
 void finalizarCPU();
 t_stack* t_stack_create();
 bool esArgumento(t_nombre_variable identificador_variable);

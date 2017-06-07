@@ -73,9 +73,16 @@ void finalizarCPU(){
 	socket_close(memoria_fd);
 }
 
-void ejecutarPrograma(){
+void finalizarPor(unsigned char type) {
+	unsigned char buffer[BUFFER_CAPACITY];
+    header_t header_pcb = protocol_header (type);
+    header_pcb.msgsize = serial_pack_pcb(pcbActual, buffer);
+    packet_t packet_pcb = protocol_packet (header_pcb, buffer);
 
-	pcbActual->quantum = 5;
+    protocol_packet_send(packet_pcb, kernel_fd);
+}
+
+void ejecutarPrograma(){
 
 	log_inform("El proceso #%d entró en ejecución.", pcbActual->idProcess);
 	if(pcbActual->quantum == 0){
@@ -93,9 +100,10 @@ void ejecutarPrograma(){
 		if (verificarTerminarEjecucion() == -1) return;
 		i++;
 		pcbActual->PC++;
+		usleep(500 * 5000); //Deberia ser "pcbActual->quantumSleep * 500"
 	}
 	if(!procesoBloqueado){
-		//finalizarPor(FIN_EJECUCION);
+		finalizarPor(OP_CPU_PROGRAM_END);
 		log_inform("Finalizo ejecucion por fin de Quantum");
 	}else {
 		log_inform("Finalizo ejecucion por proceso bloqueado");
@@ -104,6 +112,7 @@ void ejecutarPrograma(){
 
 int verificarTerminarEjecucion(){
 	if(huboStackOver) {
+		printf("Hubo stack overflow");
 		//finalizarPor(STACKOVERFLOW);
 		huboStackOver = false;
 		return -1;
