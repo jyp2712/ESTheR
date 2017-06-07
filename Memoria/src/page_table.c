@@ -32,8 +32,10 @@ int set_pages(t_page_table *page_table, int pid, int pages) {
 		if(page_table[i * COLS] == 0) {
 			page_table[i * COLS] = pid;
 			page_table[i * COLS + 1] = --pages;
+
 		}
 	}
+	log_inform("Se asignaron %i paginas", i);
 	return 1;
 }
 

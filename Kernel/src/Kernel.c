@@ -70,7 +70,6 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
                 	if (process->process == CPU){
                 		pthread_mutex_lock(&mutex_planificacion);
             			packet_t cpu_call = protocol_packet_receive(process->clientID);
-            			gestion_syscall(cpu_call, process, mem_fd);
             			pthread_mutex_unlock(&mutex_planificacion);
                 	}
             }
@@ -207,9 +206,15 @@ void planificacion (socket_t server_socket){
 
     		int tam = 0;
 			int size;
+			log_inform("Pages code: %i", pcb->pagesCode);
     		for (int pag = 0; pag < pcb->pagesCode; pag++){
-    			if (pag < pcb->pagesCode - 1) size = config->page_size;
-    			else size = (code->size % config->page_size);
+    			if (pag < pcb->pagesCode - 1){
+    				size = config->page_size;
+    			}
+    			else{
+    				size = (code->size % config->page_size);
+    				log_inform("Size del codigo restante: %i", size);
+    			}
 
     			header_t header_code = protocol_header(OP_ME_ALMBYTPAG);
     			header_code.usrpid = pcb->idProcess;
@@ -224,7 +229,15 @@ void planificacion (socket_t server_socket){
     			protocol_packet_send(packet_code, server_socket);
     			tam += size;
 
-    	        packetMemoria = protocol_packet_receive(server_socket);
+				packet_t packetMemoria = protocol_packet_receive(server_socket);
+
+				int res;
+				serial_unpack(packetMemoria.payload, "h", &res);
+				if(res == 0){
+					log_inform("Fallo al guardar el codigo en la pagina %i", pag+1);
+				}else {
+					log_inform("Codigo guardado en la pagina %i", pag+1);
+				}
     		}
 
     		header_t header_stack = protocol_header (OP_ME_ALMBYTPAG);
