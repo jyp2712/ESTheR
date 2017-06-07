@@ -342,9 +342,22 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor){
 	}
 }
 
+t_puntero_instruccion busquedaEtiqueta(t_nombre_etiqueta etiqueta){
+	int numeroInstr = 2;
+	return numeroInstr;
+
+}
+
 void irAlLabel(t_nombre_etiqueta etiqueta){
 
 	log_inform("ANSISOP_irALabel %s", etiqueta);
+	t_puntero_instruccion numeroInstr = busquedaEtiqueta(etiqueta);
+	log_inform("Instruccion del irALAbel: %d", numeroInstr);
+	if(numeroInstr == -1){
+		log_report("No se encontro la etiqueta");
+		return;
+	}
+	pcbActual->PC = numeroInstr;
 
 }
 
