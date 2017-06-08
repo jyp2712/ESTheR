@@ -106,8 +106,15 @@ void terminal() {
             	pthread_mutex_lock(&mutex_planificacion);
             } else if(streq(command, "restart")) {
             	pthread_mutex_unlock(&mutex_planificacion);
-            }else {
-                puts("Comando no reconocido. Escriba 'help' para ayuda.");
-            }
-        }
-}
+            }else if(streq(command, "help")){
+                                puts("processlist	-Muestra todos los procesos que esta manejando el Kernel");
+                                puts("status PID	-Muestra el estado en el que se encuentra el proceso");
+                                puts("kill PID	-Finaliza el proceso correspondiente al PID ingresado");
+                                puts("stop		-Detiene la planificacion de los procesos");
+                                puts("restart	-Inicia la planificacion de los procesos detenida");
+                                puts("help		-Muestra las opciones de ayuda");
+                       }else{
+                           puts("Comando no reconocido. Escriba 'help' para ayuda.");
+                       }
+                   }
+           }
