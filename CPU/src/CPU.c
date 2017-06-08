@@ -199,11 +199,12 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 	int pag = pcbActual->stackPointer / tamanioPagina;
 	int offset = pcbActual->stackPointer % tamanioPagina;
 
-	t_stack* lineaStack = list_get(pcbActual->stack, list_size(pcbActual->stack) - 1);
-	if(lineaStack == NULL){
+	t_stack* lineaStack;
+	if(list_size(pcbActual->stack) == 0){
 		lineaStack = t_stack_create();
 		list_add(pcbActual->stack, lineaStack);
-	}
+	}else
+		lineaStack = list_get(pcbActual->stack, list_size(pcbActual->stack) - 1);
 
 	if(!esArgumento(identificador_variable)){ // Es una variable
 		log_inform("ANSISOP_definirVariable %c", identificador_variable);
@@ -216,7 +217,6 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 	}
 	else{ // Es un argumento.
 		log_inform("ANSISOP_definirVariable (argumento) %c", identificador_variable);
-		lineaStack->retPos = pcbActual->PC;
 		t_var* nuevoArg = malloc(sizeof(t_var));
 		nuevoArg->mempos.page = pag;
 		nuevoArg->mempos.offset = offset;
@@ -405,7 +405,7 @@ void finalizar(void){
 	t_stack* contexto = list_remove(pcbActual->stack, list_size(pcbActual->stack) - 1);
 	int i;
 	if(contexto != NULL){
-		pcbActual->stackPointer -= sizeof(int) * (list_size(contexto->args) + i<list_size(contexto->vars)); // Disminuyo stackPointer del pcb
+		pcbActual->stackPointer -= sizeof(int) * (list_size(contexto->args) + list_size(contexto->vars)); // Disminuyo stackPointer del pcb
 		if(pcbActual->stackPointer >= 0){
 			for(i=0; i<list_size(contexto->args); i++){ // Limpio lista de argumentos del contexto
 				free(list_remove(contexto->args,i));
