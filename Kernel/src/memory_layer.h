@@ -2,6 +2,7 @@
 #define MEMORY_LAYER_H_
 
 #include "utils.h"
+#include <stdint.h>
 
 typedef struct {
 	uint32_t size;

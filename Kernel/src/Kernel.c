@@ -1,84 +1,7 @@
 #include "Kernel.h"
-#include "configuration.h"
+#include <unistd.h>
 
 int generatorPid = 0;
-t_kernel* config;
-
-void init_server(socket_t mem_fd, socket_t fs_fd) {
-
-    fdset_t read_fds, all_fds = socket_set_create();
-    socket_set_add(mem_fd, &all_fds);
-//  socket_set_add(fs_fd, &all_fds);
-    socket_t sv_sock = socket_init(NULL, config->puerto_prog);
-    socket_set_add(sv_sock, &all_fds);
-
-    while(true) {
-        read_fds = all_fds;
-        fdcheck(select(read_fds.max + 1, &read_fds.set, NULL, NULL, NULL));
-
-        for(socket_t i = 0; i <= all_fds.max; i++) {
-            if(!FD_ISSET(i, &read_fds.set)) continue;
-            if(i == sv_sock) {
-                socket_t cli_sock = socket_accept(sv_sock);
-                header_t header = protocol_handshake_receive(cli_sock);
-                process_t cli_process = header.syspid;
-                if(cli_process == CONSOLE) {
-                    socket_set_add(cli_sock, &all_fds);
-                    t_client* cliente = alloc(sizeof(t_client));
-                    cliente->clientID = cli_sock;
-                    cliente->process= CONSOLE;
-                    cliente->pids = list_create();
-                    list_add (consolas_conectadas, cliente);
-                    log_inform("Received handshake from %s", get_process_name(cli_process));
-                }
-                else if(cli_process == CPU){
-                    socket_set_add(cli_sock, &all_fds);
-                    t_client* cliente = alloc(sizeof(t_client));
-                    cliente->clientID = cli_sock;
-                    cliente->process= CPU;
-                    list_add (cpu_conectadas, cliente);
-                    log_inform("Received handshake from %s", get_process_name(cli_process));
-
-                    log_inform("Envio stack size (%i) y tamaño de pagina (%i) a CPU", config->stack_size, config->page_size);
-                    unsigned char buff[BUFFER_CAPACITY];
-                    header_t header = protocol_header(OP_KE_SEND_STACK_SIZE);
-                    header.msgsize = serial_pack(buff, "hh", config->stack_size, config->page_size);
-                    packet_t packet = protocol_packet(header, buff);
-                    protocol_packet_send(packet, cli_sock);
-                }
-                else {
-                    socket_close(cli_sock);
-                }
-            }
-            else {
-            	t_client* process = buscar_proceso (i);
-            		if (process->process == CONSOLE){
-            			packet_t program = protocol_packet_receive(process->clientID);
-                		if(program.header.opcode == OP_UNDEFINED) {
-                			socket_close(i);
-                			FD_CLR(i, &all_fds.set);
-                			continue;
-                		}else{
-                			if(program.header.opcode == OP_NEW_PROGRAM) {
-                				pthread_mutex_lock(&mutex_planificacion);
-                				gestion_datos_newPcb(program, process);
-                				pthread_mutex_unlock(&mutex_planificacion);
-                			}
-                		}
-            		}
-
-                	if (process->process == CPU){
-                		pthread_mutex_lock(&mutex_planificacion);
-            			packet_t cpu_call = protocol_packet_receive(process->clientID);
-            			pthread_mutex_unlock(&mutex_planificacion);
-                	}
-            }
-        }
-        pthread_mutex_lock(&mutex_planificacion);
-        planificacion(mem_fd);
-        pthread_mutex_unlock(&mutex_planificacion);
-    }
-}
 
 int main(int argc, char **argv) {
     guard(argc == 2, "Falta indicar ruta de archivo de configuración");
@@ -210,6 +133,7 @@ void planificacion (socket_t server_socket){
     		for (int pag = 0; pag < pcb->pagesCode; pag++){
     			if (pag < pcb->pagesCode - 1){
     				size = config->page_size;
+    				log_inform("Size del codigo sin finalizar: %i", size);
     			}
     			else{
     				size = (code->size % config->page_size);
@@ -229,9 +153,9 @@ void planificacion (socket_t server_socket){
     			protocol_packet_send(packet_code, server_socket);
     			tam += size;
 
+
 				packet_t packetMemoria = protocol_packet_receive(server_socket);
 
-				int res;
 				serial_unpack(packetMemoria.payload, "h", &res);
 				if(res == 0){
 					log_inform("Fallo al guardar el codigo en la pagina %i", pag+1);
@@ -273,27 +197,6 @@ void planificacion (socket_t server_socket){
     }
 }
 
-t_client* buscar_proceso (socket_t client){
-	t_client* aux;
-
-	for (int i = 0; i < cpu_conectadas->elements_count; i++){
-		aux = list_get (cpu_conectadas, i);
-		if (aux->clientID == client) break;
-	}
-
-	for (int i = 0; i < cpu_executing->elements_count; i++){
-	 	aux = list_get (cpu_executing, i);
-	 	if (aux->clientID == client) break;
-	}
-
-	for (int i = 0; i < consolas_conectadas->elements_count; i++){
-		aux = list_get (consolas_conectadas, i);
-		if (aux->clientID == client) break;
-	}
-
-	return aux;
-}
-
 void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
     unsigned char buffer[BUFFER_CAPACITY];
 
@@ -301,35 +204,34 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
 		case OP_CPU_PROGRAM_END:{
 									t_pcb* pcb = alloc(sizeof(t_pcb));
 									serial_unpack_pcb(pcb, cpu_syscall.payload);
+									log_inform("tengo el pcb");
 									bool getPcb (t_pcb *pcbExec){
-									return (pcb->idProcess == pcbExec->idProcess);
+										return (pcb->idProcess == pcbExec->idProcess);
 									}
 									t_pcb* aux = list_remove_by_condition(pcb_exec, (void*)getPcb);
+									log_inform("encontré el pcb en exec");
 									free(aux);
 									list_add(pcb_exit, pcb);
 
-									bool getClient (t_client *console){
-										bool ret = false;
-										int* pidConsole;
-										for(int i = 0; i < list_size(console->pids); i++){
-											pidConsole = list_get(console->pids, 0);
-											if ((int*)pcb->idProcess == pidConsole){
-												ret = true;
-												break;
-											}
-										}
-										free(pidConsole);
-										return ret;
+									bool getPid (int *pid){
+										return (pid == (int*)pcb->idProcess);
 									}
+
+									bool getClient (t_client *client){
+										return list_any_satisfy(client->pids, (void*)getPid);
+									}
+
 									t_client* console = list_find(consolas_conectadas, (void*)getClient);
 
 									header_t header_program_end = protocol_header(OP_KE_PROGRAM_END, serial_pack(buffer, "h", pcb->exitCode));
 								    header_program_end.usrpid = pcb->idProcess;
 									packet_t packet_program_end = protocol_packet(header_program_end, buffer);
 								    protocol_packet_send(packet_program_end, console->clientID);
+								    packet_program_end.header.opcode = OP_ME_FINPRO;
 								    protocol_packet_send(packet_program_end, mem_socket);
 
-									//restoreCPU(cpu);
+								    packet_program_end = protocol_packet_receive(mem_socket);
+									//restore(cpu);
 									break;
 		}
 		case OP_CPU_SEMAPHORE:{		t_pcb* pcb = alloc(sizeof(t_pcb));

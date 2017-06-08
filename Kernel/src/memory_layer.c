@@ -7,7 +7,7 @@ typedef struct {
 	byte *content;
 } page_t;
 
-mlist_t pages;
+mlist_t* pages;
 
 void memory_layer_init() {
 	pages = mlist_create();

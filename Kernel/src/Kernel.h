@@ -29,20 +29,16 @@
 #include <sys/select.h>
 #include <pthread.h>
 #include "configuration.h"
+#include "server.h"
 
 enum {NEW, READY, EXEC, BLOCK, EXIT};
-
-typedef struct{
-    socket_t clientID;
-    unsigned char process;
-    t_list* pids;
-}t_client;
 
 typedef struct{
 	unsigned char* codigo;
 	unsigned long size;
 }t_code_ms;
 
+t_kernel* config;
 char command[BUFFER_CAPACITY];
 pthread_mutex_t mutex_planificacion;
 
@@ -56,8 +52,6 @@ void gestion_datos_newPcb(packet_t, t_client*);
 
 void planificacion(socket_t);
 
-t_client* buscar_proceso (socket_t);
-
-void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket);
+void gestion_syscall(packet_t, t_client*, socket_t);
 
 #endif /* KERNEL_H_ */

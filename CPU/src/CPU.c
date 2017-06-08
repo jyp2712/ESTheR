@@ -420,7 +420,7 @@ void finalizar(void){
 	if(list_size(pcbActual->stack) == 0){
 		finPrograma = true;
 		log_inform("Finalizó la ejecucion del programa.");
-		//finalizarPor(FIN_PROCESO);
+		finalizarPor(OP_CPU_PROGRAM_END);
 	}else{
 		pcbActual->PC = contexto->retPos;
 	}
