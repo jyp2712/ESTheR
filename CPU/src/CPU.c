@@ -438,14 +438,14 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 	protocol_packet_send(packet, kernel_fd);
 
 	int offset = 0;
-	int sizeVariable = string_length(variable);
-	memcpy(buffer, &sizeVariable, sizeof(sizeVariable));
-	offset+=sizeof(sizeVariable);
-	memcpy(buffer + offset, variable, strlen(variable)+1);
-	offset+=strlen(variable)+1;
-	memcpy(buffer+offset, &valor, sizeof(valor));
+	memcpy(buffer, "a", 1);
+	offset += 1;
+	memcpy(buffer, valor, sizeof(valor));
+	offset += sizeof(valor);
+	memcpy(buffer, variable, string_length(variable));
+	offset += string_length(variable);
 
-	header.msgsize = sizeof(sizeVariable) + string_length(variable) + sizeof(valor);
+	header.msgsize = offset;
 	packet = protocol_packet(header, buffer);
 
 	return valor;
@@ -460,6 +460,15 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
 	header_t header = protocol_header (OP_CPU_SHARED_VAR);
 	header.msgsize = serial_pack_pcb(pcbActual, buffer);
 	packet_t packet = protocol_packet (header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+	char *payload = string_new();
+	string_append(&payload, "v");
+	string_append(&payload, variable);
+
+	memcpy(buffer, payload, string_length(payload));
+	header.msgsize = string_length(payload);
+	packet = protocol_packet(header, buffer);
 	protocol_packet_send(packet, kernel_fd);
 
 	//Recibo valor del Kernel
