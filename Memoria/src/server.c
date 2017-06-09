@@ -55,7 +55,7 @@ void cli_thread(client_t *client) {
 	while(true) {
 		packet_t packet = protocol_packet_receive(client->socket);
 
-		if(!server.active) return;
+		//if(!server.active) return;
 
 		log_inform("packet header syspid %d usrpid %d opcode %d msgsize %d", packet.header.syspid, packet.header.usrpid, packet.header.opcode, packet.header.msgsize);
 		switch(packet.header.opcode) {

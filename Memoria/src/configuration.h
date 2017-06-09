@@ -5,15 +5,6 @@
 #include "Memoria.h"
 #include "page_table.h"
 
-// Configuracion
-typedef struct{
-	int puerto;
-	int marcos;
-	int marco_size;
-	int entradas_cache;
-	int cache_x_proc;
-	int retardo_memoria;
-} t_memoria;
 
 // Estado global de la Memoria
 typedef struct {

@@ -8,21 +8,24 @@ C_SRCS += \
 ../src/configuration.c \
 ../src/console.c \
 ../src/memory_layer.c \
-../src/server.c 
+../src/server.c \
+../src/syscall.c 
 
 OBJS += \
 ./src/Kernel.o \
 ./src/configuration.o \
 ./src/console.o \
 ./src/memory_layer.o \
-./src/server.o 
+./src/server.o \
+./src/syscall.o 
 
 C_DEPS += \
 ./src/Kernel.d \
 ./src/configuration.d \
 ./src/console.d \
 ./src/memory_layer.d \
-./src/server.d 
+./src/server.d \
+./src/syscall.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

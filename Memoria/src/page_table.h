@@ -3,10 +3,12 @@
 
 #include "utils.h"
 #include "globals.h"
+#include "Memoria.h"
+#include "log.h"
 
 typedef int t_page_table;
 
-t_page_table *get_page_table(int rows, int frame_size);
+t_page_table *get_page_table(int rows);
 
 int set_pages(t_page_table *page_table, int pid, int pages);
 

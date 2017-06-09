@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include "configuration.h"
 #include "server.h"
+#include "syscall.h"
 
 enum {NEW, READY, EXEC, BLOCK, EXIT};
 
@@ -51,7 +52,5 @@ t_pcb* crear_pcb_proceso (t_metadata_program*);
 void gestion_datos_newPcb(packet_t, t_client*);
 
 void planificacion(socket_t);
-
-void gestion_syscall(packet_t, t_client*, socket_t);
 
 #endif /* KERNEL_H_ */

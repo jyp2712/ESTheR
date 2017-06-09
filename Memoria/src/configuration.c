@@ -3,7 +3,7 @@
 
 t_memoria *get_config(const char *path) {
 	t_config* c = config_create((char *)path);
-	t_memoria *config = malloc(sizeof(t_memoria));
+	config = malloc(sizeof(t_memoria));
 	config->puerto = strtoi(config_get_string_value(c, "PUERTO"));
 	config->marcos = config_get_int_value(c, "MARCOS");
 	config->marco_size = config_get_int_value(c, "MARCO_SIZE");

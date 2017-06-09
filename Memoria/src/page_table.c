@@ -2,11 +2,9 @@
 
 #define COLS 3
 int page_rows;
-int frame_size;
 
-t_page_table *get_page_table(int rows, int size) {
+t_page_table *get_page_table(int rows) {
 	page_rows = rows;
-	frame_size = size;
 	return alloc(sizeof(t_page_table) * rows * COLS);
 }
 
@@ -86,7 +84,7 @@ int get_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
 		return 0;
 	}
 	int i, j = 0;
-	int base = frame * frame_size + offset;
+	int base = frame * config->marco_size + offset;
 	for(i = base; i < base + size; i++) {
 		data[j++] = main_memory[i];
 	}
@@ -103,7 +101,7 @@ int set_bytes(byte *main_memory, int frame, int offset, int size, byte *data) {
 		return 0;
 	}
 	int i, j = 0;
-	int base = frame * frame_size + offset;
+	int base = frame * config->marco_size + offset;
 	for(i = base; i < base + size; i++) {
 		main_memory[i] = data[j++];
 	}

@@ -22,7 +22,7 @@ void init() {
 	memory.delay = config->retardo_memoria;
 	memory.nframes = config->marcos;
 	memory.sframe = config->marco_size;
-	memory.page_table = get_page_table(config->marcos, config->marco_size);
+	memory.page_table = get_page_table(config->marcos);
 
 	cache_create(config->entradas_cache, config->marco_size, config->cache_x_proc);
 	server_start(config, &memory);

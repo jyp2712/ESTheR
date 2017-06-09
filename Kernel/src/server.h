@@ -11,5 +11,7 @@ void init_server(socket_t, socket_t);
 
 t_client* buscar_proceso (socket_t);
 
+void restoreCPU(t_client*);
+
 #endif /* SERVER_H_ */
 

@@ -98,3 +98,12 @@ t_client* buscar_proceso (socket_t client){
 
 	return aux;
 }
+
+void restoreCPU(t_client* cpu){
+	bool getCPU (t_client* cpuToRestore){
+		return (cpuToRestore->clientID == cpu->clientID);
+	}
+	list_remove_by_condition(cpu_executing, (void*)getCPU);
+	list_add(cpu_conectadas, cpu);
+}
+
