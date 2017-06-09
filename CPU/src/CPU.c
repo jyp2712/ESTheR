@@ -212,7 +212,7 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 		nuevaVar->id = identificador_variable;
 		nuevaVar->mempos.page = pag;
 		nuevaVar->mempos.offset = offset;
-		nuevaVar->mempos.size = sizeof(int);
+		nuevaVar->mempos.size = tamanioVariable;
 		list_add(lineaStack->vars, nuevaVar);
 	}
 	else{ // Es un argumento.
@@ -220,13 +220,13 @@ t_puntero definirVariable(t_nombre_variable identificador_variable){
 		t_var* nuevoArg = malloc(sizeof(t_var));
 		nuevoArg->mempos.page = pag;
 		nuevoArg->mempos.offset = offset;
-		nuevoArg->mempos.size = sizeof(int);
+		nuevoArg->mempos.size = tamanioVariable;
 		list_add(lineaStack->args, nuevoArg);
 	}
 
-	pcbActual->stackPointer += sizeof(int);
-	int posAbsoluta = pcbActual->stackPointer - sizeof(int);
-	log_inform("Posicion relativa de %c: %d %d %d", identificador_variable, pag, offset, sizeof(int));
+	pcbActual->stackPointer += tamanioVariable;
+	int posAbsoluta = pcbActual->stackPointer - tamanioVariable;
+	log_inform("Posicion relativa de %c: %d %d %d", identificador_variable, pag, offset, tamanioVariable);
 	log_inform("Posicion absoluta de %c: %i", identificador_variable, posAbsoluta);
 	return posAbsoluta;
 
@@ -283,7 +283,7 @@ t_valor_variable dereferenciar(t_puntero direccion_variable){
 
 	int page = (direccion_variable / tamanioPagina) + pcbActual->pagesCode;
 	int offset = direccion_variable % tamanioPagina;
-	int size = sizeof(int);
+	int size = tamanioVariable;
 
 	unsigned char buff[BUFFER_CAPACITY];
 	header_t header = protocol_header (OP_ME_SOLBYTPAG);
@@ -317,7 +317,7 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor){
 	int page, offset, size;
 	page = (direccion_variable / tamanioPagina) + pcbActual->pagesCode;
 	offset = direccion_variable % tamanioPagina;
-	size = sizeof(int);
+	size = tamanioVariable;
 
 	unsigned char buff[BUFFER_CAPACITY];
 	header_t header = protocol_header (OP_ME_ALMBYTPAG);
@@ -368,7 +368,7 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar){
 	nuevaLineaStackEjecucionActual = t_stack_create();
 	nuevaLineaStackEjecucionActual->retVar.page = donde_retornar / tamanioPagina;;
 	nuevaLineaStackEjecucionActual->retVar.offset = donde_retornar % tamanioPagina;
-	nuevaLineaStackEjecucionActual->retVar.size = sizeof(int);
+	nuevaLineaStackEjecucionActual->retVar.size = tamanioVariable;
 	nuevaLineaStackEjecucionActual->retPos = pcbActual->PC;
 
 	// La agrego a la lista, se encuentra en la ultima posicion.
@@ -405,7 +405,7 @@ void finalizar(void){
 	t_stack* contexto = list_remove(pcbActual->stack, list_size(pcbActual->stack) - 1);
 	int i;
 	if(contexto != NULL){
-		pcbActual->stackPointer -= sizeof(int) * (list_size(contexto->args) + list_size(contexto->vars)); // Disminuyo stackPointer del pcb
+		pcbActual->stackPointer -= tamanioVariable * (list_size(contexto->args) + list_size(contexto->vars)); // Disminuyo stackPointer del pcb
 		if(pcbActual->stackPointer >= 0){
 			for(i=0; i<list_size(contexto->args); i++){ // Limpio lista de argumentos del contexto
 				free(list_remove(contexto->args,i));
@@ -425,6 +425,50 @@ void finalizar(void){
 		pcbActual->PC = contexto->retPos;
 	}
 	free(contexto);
+}
+
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor){
+
+	log_inform("ANSISOP_asignarValorCompartida var: %s, valor: %d", variable, valor);
+
+	unsigned char buffer[BUFFER_CAPACITY];
+	header_t header = protocol_header (OP_CPU_SHARED_VAR);
+	header.msgsize = serial_pack_pcb(pcbActual, buffer);
+	packet_t packet = protocol_packet (header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+	int offset = 0;
+	int sizeVariable = string_length(variable);
+	memcpy(buffer, &sizeVariable, sizeof(sizeVariable));
+	offset+=sizeof(sizeVariable);
+	memcpy(buffer + offset, variable, strlen(variable)+1);
+	offset+=strlen(variable)+1;
+	memcpy(buffer+offset, &valor, sizeof(valor));
+
+	header.msgsize = sizeof(sizeVariable) + string_length(variable) + sizeof(valor);
+	packet = protocol_packet(header, buffer);
+
+	return valor;
+
+}
+
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable){
+
+	log_inform("ANSISOP_obtenerValorCompartida %s", variable);
+
+	unsigned char buffer[BUFFER_CAPACITY];
+	header_t header = protocol_header (OP_CPU_SHARED_VAR);
+	header.msgsize = serial_pack_pcb(pcbActual, buffer);
+	packet_t packet = protocol_packet (header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+	//Recibo valor del Kernel
+	packet_t packetKernel = protocol_packet_receive(kernel_fd);
+    t_valor_variable valor;
+    serial_unpack(packetKernel.payload, "h", &valor);
+
+	log_inform( "Valor de %s: %d", variable, valor);
+	return valor;
 }
 
 void signalAnsisop(t_nombre_semaforo identificador_semaforo){

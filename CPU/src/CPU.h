@@ -22,6 +22,7 @@ typedef struct{
 	char* puerto_memoria;
 }t_cpu;
 
+tamanioVariable = sizeof(int);
 bool procesoBloqueado = false;
 bool huboStackOver = false;
 bool finPrograma = false;
@@ -55,6 +56,8 @@ void retornar(t_valor_variable retorno);
 void irAlLabel(t_nombre_etiqueta etiqueta);
 void signalAnsisop(t_nombre_semaforo identificador_semaforo);
 void wait(t_nombre_semaforo identificador_semaforo);
+t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_variable valor);
+t_valor_variable obtenerValorCompartida(t_nombre_compartida variable);
 
 // Estructuras funcionesAnSISOP
 AnSISOP_funciones funcionesAnSISOP = {
@@ -62,8 +65,8 @@ AnSISOP_funciones funcionesAnSISOP = {
 		.AnSISOP_obtenerPosicionVariable	= obtenerPosicionVariable,
 		.AnSISOP_dereferenciar				= dereferenciar,
 		.AnSISOP_asignar					= asignar,
-		//.AnSISOP_obtenerValorCompartida	= obtenerValorCompartida,
-		//.AnSISOP_asignarValorCompartida	= asignarValorCompartida,
+		.AnSISOP_obtenerValorCompartida		= obtenerValorCompartida,
+		.AnSISOP_asignarValorCompartida		= asignarValorCompartida,
 		.AnSISOP_irAlLabel					= irAlLabel,
 		.AnSISOP_llamarConRetorno			= llamarConRetorno,
 		.AnSISOP_llamarSinRetorno			= llamarSinRetorno,
