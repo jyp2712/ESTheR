@@ -53,6 +53,8 @@ void llamarSinRetorno(t_nombre_etiqueta etiqueta);
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar);
 void retornar(t_valor_variable retorno);
 void irAlLabel(t_nombre_etiqueta etiqueta);
+void signalAnsisop(t_nombre_semaforo identificador_semaforo);
+void wait(t_nombre_semaforo identificador_semaforo);
 
 // Estructuras funcionesAnSISOP
 AnSISOP_funciones funcionesAnSISOP = {
@@ -79,8 +81,8 @@ AnSISOP_kernel funcionesKernel = {
 		//.AnSISOP_liberar					= liberar
 		//.AnSISOP_moverCursor				= moverCursor
 		//.AnSISOP_reservar					= reservar
-		//.AnSISOP_signal					= signal
-		//.AnSISOP_wait						= wait
+		.AnSISOP_signal						= signalAnsisop,
+		.AnSISOP_wait						= wait,
 };
 
 

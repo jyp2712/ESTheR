@@ -427,6 +427,49 @@ void finalizar(void){
 	free(contexto);
 }
 
+void signalAnsisop(t_nombre_semaforo identificador_semaforo){
+
+	log_inform("Signal a semaforo '%s'", identificador_semaforo);
+
+	unsigned char buffer[BUFFER_CAPACITY];
+	header_t header = protocol_header (OP_CPU_SEMAPHORE);
+	header.msgsize = serial_pack_pcb(pcbActual, buffer);
+	packet_t packet = protocol_packet (header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+	char *payload = string_new();
+	string_append(&payload, "s");
+	string_append(&payload, identificador_semaforo);
+
+	memcpy(buffer, payload, string_length(payload));
+	header.msgsize = string_length(payload);
+	packet = protocol_packet(header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+
+}
+
+void wait(t_nombre_semaforo identificador_semaforo){
+
+	log_inform("Wait a semaforo '%s'", identificador_semaforo);
+
+	unsigned char buffer[BUFFER_CAPACITY];
+	header_t header = protocol_header (OP_CPU_SEMAPHORE);
+	header.msgsize = serial_pack_pcb(pcbActual, buffer);
+	packet_t packet = protocol_packet (header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+	char *payload = string_new();
+	string_append(&payload, "w");
+	string_append(&payload, identificador_semaforo);
+
+	memcpy(buffer, payload, string_length(payload));
+	header.msgsize = string_length(payload);
+	packet = protocol_packet(header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+}
+
 void leerConfiguracionCPU(t_cpu* cpu, char* path) {
 
 	t_config* config = config_create(path);
