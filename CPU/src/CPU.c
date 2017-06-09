@@ -343,9 +343,15 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor){
 }
 
 t_puntero_instruccion busquedaEtiqueta(t_nombre_etiqueta etiqueta){
-	int numeroInstr = 2;
-	return numeroInstr;
 
+	for (int i = 0; i < pcbActual->tags; ++i) {
+		if(strcmp(pcbActual->indexTag[i].name, etiqueta) == 0){
+			return pcbActual->indexTag[i].PC;
+		} else {
+			return -1;
+		}
+	}
+	return -1;
 }
 
 void irAlLabel(t_nombre_etiqueta etiqueta){
@@ -357,7 +363,7 @@ void irAlLabel(t_nombre_etiqueta etiqueta){
 		log_report("No se encontro la etiqueta");
 		return;
 	}
-	pcbActual->PC = numeroInstr;
+	pcbActual->PC = numeroInstr -1;
 
 }
 

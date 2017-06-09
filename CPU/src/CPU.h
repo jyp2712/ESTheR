@@ -22,7 +22,7 @@ typedef struct{
 	char* puerto_memoria;
 }t_cpu;
 
-tamanioVariable = sizeof(int);
+int tamanioVariable = sizeof(int);
 bool procesoBloqueado = false;
 bool huboStackOver = false;
 bool finPrograma = false;
