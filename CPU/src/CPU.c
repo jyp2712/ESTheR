@@ -446,13 +446,16 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable, t_valor_va
 	int offset = 0;
 	memcpy(buffer, "a", 1);
 	offset += 1;
-	memcpy(buffer, valor, sizeof(valor));
-	offset += sizeof(valor);
-	memcpy(buffer, variable, string_length(variable));
+	memcpy(buffer+offset, variable, string_length(variable));
 	offset += string_length(variable);
 
 	header.msgsize = offset;
 	packet = protocol_packet(header, buffer);
+	protocol_packet_send(packet, kernel_fd);
+
+	header.msgsize = serial_pack(buffer, "h", valor);
+	packet = protocol_packet(header, buffer);
+	protocol_packet_send(packet, kernel_fd);
 
 	return valor;
 
@@ -504,7 +507,6 @@ void signalAnsisop(t_nombre_semaforo identificador_semaforo){
 	header.msgsize = string_length(payload);
 	packet = protocol_packet(header, buffer);
 	protocol_packet_send(packet, kernel_fd);
-
 
 }
 

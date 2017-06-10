@@ -16,21 +16,21 @@ t_kernel *get_config(const char *path) {
     config->grado_multiprog = config_get_int_value(c, "GRADO_MULTIPROG");
     config->sem_ids = config_get_array_value(c, "SEM_IDS");
     config->sem_init = config_get_array_value(c, "SEM_INIT");
+
     int counter = 0;
-    while (config->sem_ids[counter]) counter++;
-    int initValue;
-    config->sem_ansisop = malloc(counter * sizeof(sem_t));
-    config->solicitudes_sem = malloc(counter * sizeof(t_list));
+    while (config->sem_init[counter]) counter++;
+    sem_ansisop = malloc(counter * sizeof(int));
+    solicitudes_sem = malloc(counter * sizeof(t_list));
     for(int i=0; i<counter; i++){
-    	config->solicitudes_sem[i] = list_create();
-    	initValue = atoi(config->sem_init[i]);
-    	sem_init(&config->sem_ansisop[i], 0, initValue);
+    	sem_ansisop[i] = atoi(config->sem_init[i]);
+    	solicitudes_sem[i] = list_create();
     }
+
     config->shared_vars = config_get_array_value (c, "SHARED_VARS");
     counter = 0;
     while (config->shared_vars[counter]) counter++;
-    config->shared_values = malloc(counter * sizeof(int));
-    for(int i=0; i<counter; i++) config->shared_values[i] = 0;
+    shared_values = malloc(counter * sizeof(int));
+    for(int i=0; i<counter; i++) shared_values[i] = 0;
     config->stack_size = config_get_int_value(c, "STACK_SIZE");
     //config_destroy(c); //TODO revisar la destruccion de este objeto
 
@@ -47,7 +47,7 @@ t_kernel *get_config(const char *path) {
     printf("ALGORITMO: %s\n", config->algoritmo);
     printf("GRADO_MULTIPROG: %i\n", config->grado_multiprog);
     printf("SEM_IDS:[%s, %s ,%s]\n", config->sem_ids[0], config->sem_ids[1], config->sem_ids[2]);
-    printf("SEM_INIT:[%s, %s ,%s]\n", config->sem_init[0], config->sem_init[1], config->sem_init[2]);
+    printf("SEM_INIT:[%i, %i ,%i]\n", sem_ansisop[0], sem_ansisop[1], sem_ansisop[2]);
     printf("SHARED_VARS:[!%s, !%s ,!%s]\n", config->shared_vars[0], config->shared_vars[1], config->shared_vars[2]);
     printf("STACK_SIZE: %i\n", config->stack_size);
 
