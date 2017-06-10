@@ -11,6 +11,8 @@
 
 #define BUFFER_CAPACITY 1024
 
+
+
 typedef unsigned char byte;
 typedef const char * string;
 

@@ -13,6 +13,7 @@
 #include "cache.h"
 #include "server.h"
 #include "console.h"
+#include "hash_table.h"
 
 t_memoria *config;
 t_memory_data memory;
@@ -23,6 +24,8 @@ void init() {
 	memory.nframes = config->marcos;
 	memory.sframe = config->marco_size;
 	memory.page_table = get_page_table(config->marcos);
+
+	create_table_hash(memory.nframes);//Envio el tamano de marcos para crear e inicializar la tabla hash
 
 	cache_create(config->entradas_cache, config->marco_size, config->cache_x_proc);
 	server_start(config, &memory);
