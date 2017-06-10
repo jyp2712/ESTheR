@@ -18,7 +18,7 @@ typedef struct{
 	int page;
 }t_element_hash;
 
-void create_tab_hash(t_element_hash hash_table);
+void create_table_hash(int MARCOS);
 
 /*Agrega el elemento en la posicion del array que deriva de la clave*/
 /*Si esta ocupada, se guarda en la primer posicion que encruenta en forma ascendente*/

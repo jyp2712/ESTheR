@@ -26,6 +26,7 @@ void create_table_hash(int MARCOS){
 int add_element(int pag,int id_Pro){
 
 	int final_arrays=true;
+	int keys;
 	t_element_hash *element_hash = alloc(sizeof(t_element_hash));
 
 	element_hash->page=pag;
@@ -34,9 +35,9 @@ int add_element(int pag,int id_Pro){
 
 	if(table_complete(hash_table)){
 		puts("Se completo la tabla de Frames");
-		return incorrect;
+		keys=incorrect;
 	}else {
-		int keys=create_keys(element_hash->page,element_hash->id_Process);
+		keys=create_keys(element_hash->page,element_hash->id_Process);
 		if(hash_table[keys].page==(int)NULL){
 			hash_table[keys]=*element_hash;
 		}else{
@@ -44,19 +45,20 @@ int add_element(int pag,int id_Pro){
 				if(hash_table[keys].page==(int)NULL){
 					hash_table[i]=*element_hash;
 					final_arrays=false;
-					return i;
+					keys=i;
 				}
 
 			}if(final_arrays==true){
 				for(int i=0;i<keys;i++){
 					hash_table[i]=*element_hash;
-					return i;
+					keys=i;
 
 				}
 			}
 
 		}
 	}
+	return keys;
 }
 
 
