@@ -8,6 +8,7 @@ C_SRCS += \
 ../src/cache.c \
 ../src/configuration.c \
 ../src/console.c \
+../src/hash_table.c \
 ../src/operations.c \
 ../src/page_table.c \
 ../src/server.c 
@@ -17,6 +18,7 @@ OBJS += \
 ./src/cache.o \
 ./src/configuration.o \
 ./src/console.o \
+./src/hash_table.o \
 ./src/operations.o \
 ./src/page_table.o \
 ./src/server.o 
@@ -26,6 +28,7 @@ C_DEPS += \
 ./src/cache.d \
 ./src/configuration.d \
 ./src/console.d \
+./src/hash_table.d \
 ./src/operations.d \
 ./src/page_table.d \
 ./src/server.d 
