@@ -531,9 +531,9 @@ void serial_unpack_pcb (t_pcb* pcb, unsigned char* buff){
 		tam += 2;
 	}
 	pcb->indexTag = alloc(pcb->tags * sizeof(t_programTag));
-	char tag[20];
+	char tag[64];
 	for (int i = 0; i < pcb->tags; i++){
-		serial_unpack(buff+tam, "20s", &tag);
+		serial_unpack(buff+tam, "64s", &tag);
 		tam += strlen (tag) + 2;
 		pcb->indexTag[i].name = string_duplicate(tag);
 		strcpy((pcb->indexTag+i)->name, tag);

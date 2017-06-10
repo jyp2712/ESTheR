@@ -39,7 +39,6 @@ typedef struct{
 	unsigned long size;
 }t_code_ms;
 
-t_kernel* config;
 char command[BUFFER_CAPACITY];
 pthread_mutex_t mutex_planificacion;
 

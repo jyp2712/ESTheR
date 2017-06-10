@@ -1,9 +1,7 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
-#include <commons/config.h>
-#include <commons/collections/list.h>
-#include <semaphore.h>
+#include "Kernel.h"
 
 typedef struct{
     char* puerto_prog;
@@ -19,12 +17,14 @@ typedef struct{
     char** sem_ids;
     char** sem_init;
     char** shared_vars;
-    int* shared_values;
     int stack_size;
     int page_size;
-    sem_t *sem_ansisop;
-    t_list** solicitudes_sem;
 }t_kernel;
+
+t_kernel* config;
+int* sem_ansisop;
+int* shared_values;
+t_list** solicitudes_sem;
 
 t_kernel *get_config(const char* path);
 
