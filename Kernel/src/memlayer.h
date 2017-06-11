@@ -1,5 +1,5 @@
-#ifndef MEMORY_LAYER_H_
-#define MEMORY_LAYER_H_
+#ifndef MEMLAYER_H_
+#define MEMLAYER_H_
 
 #include "utils.h"
 #include <stdint.h>
@@ -9,4 +9,4 @@ typedef struct {
 	bool is_free;
 } heap_metadata_t;
 
-#endif /* MEMORY_LAYER_H_ */
+#endif /* MEMLAYER_H_ */

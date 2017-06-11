@@ -29,6 +29,7 @@ typedef struct {
 	thread_t tid;
 	sem_t sem;
 	int status;
+	int exitcode;
 } program_t;
 
 void start_program_thread(string path);

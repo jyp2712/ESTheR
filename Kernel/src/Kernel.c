@@ -1,6 +1,7 @@
 #include "Kernel.h"
 #include <unistd.h>
 
+socket_t memfd;
 int generatorPid = 0;
 
 int main(int argc, char **argv) {
@@ -28,6 +29,7 @@ int main(int argc, char **argv) {
     socket_t memoria_fd = socket_connect(config->ip_memoria, config->puerto_memoria);
     protocol_handshake_send(memoria_fd);
     printf("\33[2K\rConectado a la Memoria en %s:%s\n", config->ip_memoria, config->puerto_memoria);
+    memfd = memoria_fd;
 
     packet_t packet = protocol_packet_receive(memoria_fd);
     serial_unpack(packet.payload, "h", &config->page_size);

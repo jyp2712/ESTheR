@@ -61,8 +61,8 @@ void program_handler(string path) {
 	}
 	time_t end_time = get_current_time();
 
-	log_inform("Program #%d ended", program->pid);
-	print("Programa #%d terminado.", program->pid);
+	log_inform("Program #%d ended with exit code %d", program->pid, program->exitcode);
+	print("Programa #%d terminado (código de salida: %d).", program->pid, program->exitcode);
 	print("Hora de inicio: %s", datetime(start_time));
 	print("Hora de finalización: %s", datetime(end_time));
 	print("Cantidad de impresiones: %u", num_prints);

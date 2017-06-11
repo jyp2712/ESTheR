@@ -31,6 +31,7 @@
 #include "configuration.h"
 #include "server.h"
 #include "syscall.h"
+#include "exitcode.h"
 
 enum {NEW, READY, EXEC, BLOCK, EXIT};
 
@@ -45,6 +46,8 @@ pthread_mutex_t mutex_planificacion;
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
 t_list *consolas_conectadas, *consolas_desconectadas, *cpu_conectadas, *cpu_executing;
 t_list *deadpid, *codes_ms;
+
+extern socket_t memfd;
 
 t_pcb* crear_pcb_proceso (t_metadata_program*);
 

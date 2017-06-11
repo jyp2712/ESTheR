@@ -2,7 +2,7 @@
 #define log_h
 
 #define LOG_ENABLED true
-#define LOG_STDOUT true
+#define LOG_STDOUT false // usen el archivo de log en lugar de esto porfa!
 
 #include "utils.h"
 

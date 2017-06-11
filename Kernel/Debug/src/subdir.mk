@@ -7,7 +7,8 @@ C_SRCS += \
 ../src/Kernel.c \
 ../src/configuration.c \
 ../src/console.c \
-../src/memory_layer.c \
+../src/exitcode.c \
+../src/memlayer.c \
 ../src/server.c \
 ../src/syscall.c 
 
@@ -15,7 +16,8 @@ OBJS += \
 ./src/Kernel.o \
 ./src/configuration.o \
 ./src/console.o \
-./src/memory_layer.o \
+./src/exitcode.o \
+./src/memlayer.o \
 ./src/server.o \
 ./src/syscall.o 
 
@@ -23,7 +25,8 @@ C_DEPS += \
 ./src/Kernel.d \
 ./src/configuration.d \
 ./src/console.d \
-./src/memory_layer.d \
+./src/exitcode.d \
+./src/memlayer.d \
 ./src/server.d \
 ./src/syscall.d 
 
