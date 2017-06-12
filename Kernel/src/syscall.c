@@ -1,6 +1,6 @@
 #include "syscall.h"
 
-void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
+void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket) {
     unsigned char buffer[BUFFER_CAPACITY];
     t_pcb* pcb = alloc(sizeof(t_pcb));
     serial_unpack_pcb(pcb, cpu_syscall.payload);
@@ -11,30 +11,9 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket){
     free(aux);
 	switch (cpu_syscall.header.opcode){
 		case OP_CPU_PROGRAM_END:
-		{
-			list_add(pcb_exit, pcb);
-
-			bool getPid (int *pid){
-				return (pid == (int*)pcb->idProcess);
-			}
-
-			bool getClient (t_client *client){
-				return list_any_satisfy(client->pids, (void*)getPid);
-			}
-
-			t_client* console = list_find(consolas_conectadas, (void*)getClient);
-
-			header_t header_program_end = protocol_header(OP_KE_PROGRAM_END, serial_pack(buffer, "h", pcb->exitCode));
-			header_program_end.usrpid = pcb->idProcess;
-			packet_t packet_program_end = protocol_packet(header_program_end, buffer);
-			protocol_packet_send(packet_program_end, console->clientID);
-			packet_program_end.header.opcode = OP_ME_FINPRO;
-			protocol_packet_send(packet_program_end, mem_socket);
-
-			packet_program_end = protocol_packet_receive(mem_socket);
+			end_program(pcb);
 			restoreCPU(cpu);
 			break;
-		}
 		case OP_CPU_SEMAPHORE:
 		{
 			packet_t packet_sem = protocol_packet_receive(cpu->clientID);

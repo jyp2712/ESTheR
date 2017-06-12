@@ -9,7 +9,9 @@ typedef struct{
 
 void init_server(socket_t, socket_t);
 
-t_client* buscar_proceso (socket_t);
+void destroy_console(t_client *client);
+
+t_client* buscar_proceso(socket_t);
 
 void restoreCPU(t_client*);
 

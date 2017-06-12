@@ -3,6 +3,7 @@
 #include "mlist.h"
 #include "Consola.h"
 #include "log.h"
+#include "serial.h"
 
 program_t *get_program(int pid) {
 	bool condition(program_t *element) {
@@ -28,7 +29,7 @@ void message_receiver() {
 		case OP_KE_PROGRAM_END:
 			program = get_program(packet.header.usrpid);
 			program->status = PROGRAM_ENDED;
-			serial_unpack(packet.payload, "h", &packet.payload);
+			serial_unpack(packet.payload, "h", &program->exitcode);
 			thread_sem_signal(&program->sem);
 			break;
 		default:

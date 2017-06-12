@@ -197,4 +197,19 @@ void planificacion (socket_t server_socket){
     }
 }
 
+t_pcb *get_pcb_by_pid(int pid) {
+	bool condition(void *elem) {
+		return ((t_pcb*)elem)->idProcess == pid;
+	}
+
+	t_list *pcb_lists[5] = {pcb_new, pcb_ready, pcb_exec, pcb_block, pcb_exit};
+
+	for(int i = 0; i < 5; i++) {
+		t_pcb *pcb = list_find(pcb_lists[i], condition);
+		if(pcb != NULL) return pcb;
+	}
+
+	return NULL;
+}
+
 

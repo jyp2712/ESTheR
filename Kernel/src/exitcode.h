@@ -19,4 +19,8 @@ typedef enum {
 
 void end_program(t_pcb *pcb);
 
+t_pcb *duplicate_pcb(t_pcb *pcb);
+
+void remove_pcb_from_lists(t_pcb *pcb);
+
 #endif /* EXITCODE_H_ */

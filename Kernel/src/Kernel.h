@@ -44,7 +44,7 @@ char command[BUFFER_CAPACITY];
 pthread_mutex_t mutex_planificacion;
 
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
-t_list *consolas_conectadas, *consolas_desconectadas, *cpu_conectadas, *cpu_executing;
+t_list *consolas_conectadas, *cpu_conectadas, *cpu_executing;
 t_list *deadpid, *codes_ms;
 
 extern socket_t memfd;
@@ -54,5 +54,7 @@ t_pcb* crear_pcb_proceso (t_metadata_program*);
 void gestion_datos_newPcb(packet_t, t_client*);
 
 void planificacion(socket_t);
+
+t_pcb *get_pcb_by_pid(int pid);
 
 #endif /* KERNEL_H_ */
