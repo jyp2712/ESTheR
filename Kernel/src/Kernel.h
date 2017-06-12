@@ -41,7 +41,6 @@ typedef struct{
 	unsigned long size;
 }t_code_ms;
 
-char command[BUFFER_CAPACITY];
 pthread_mutex_t mutex_planificacion;
 
 t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;

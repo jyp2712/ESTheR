@@ -5,7 +5,7 @@
 
 void end_program(t_pcb *pcb, exitcode_t code) {
 	pcb->exitCode = code;
-	pcb = pbc_duplicate(pcb);
+	pcb = pcb_duplicate(pcb);
 	pcb_remove(pcb);
 	list_add(pcb_exit, pcb);
 
