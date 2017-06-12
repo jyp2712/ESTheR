@@ -9,6 +9,7 @@ C_SRCS += \
 ../src/console.c \
 ../src/exitcode.c \
 ../src/memlayer.c \
+../src/pcbutils.c \
 ../src/server.c \
 ../src/syscall.c 
 
@@ -18,6 +19,7 @@ OBJS += \
 ./src/console.o \
 ./src/exitcode.o \
 ./src/memlayer.o \
+./src/pcbutils.o \
 ./src/server.o \
 ./src/syscall.o 
 
@@ -27,6 +29,7 @@ C_DEPS += \
 ./src/console.d \
 ./src/exitcode.d \
 ./src/memlayer.d \
+./src/pcbutils.d \
 ./src/server.d \
 ./src/syscall.d 
 

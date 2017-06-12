@@ -11,7 +11,7 @@ void gestion_syscall(packet_t cpu_syscall, t_client* cpu, socket_t mem_socket) {
     free(aux);
 	switch (cpu_syscall.header.opcode){
 		case OP_CPU_PROGRAM_END:
-			end_program(pcb);
+			end_program(pcb, EXIT_SUCCESSFUL);
 			restoreCPU(cpu);
 			break;
 		case OP_CPU_SEMAPHORE:

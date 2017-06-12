@@ -17,10 +17,6 @@ typedef enum {
 	EXIT_UNDEFINED_ERROR = -20
 } exitcode_t;
 
-void end_program(t_pcb *pcb);
-
-t_pcb *duplicate_pcb(t_pcb *pcb);
-
-void remove_pcb_from_lists(t_pcb *pcb);
+void end_program(t_pcb *pcb, exitcode_t code);
 
 #endif /* EXITCODE_H_ */

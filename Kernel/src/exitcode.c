@@ -3,14 +3,10 @@
 #include "protocol.h"
 #include "Kernel.h"
 
-void end_program(t_pcb *pcb) {
-
-	bool get_pcb(t_pcb *element){
-		return pcb->idProcess == element->idProcess;
-	}
-
-	pcb = duplicate_pcb(pcb);
-	remove_pcb_from_lists(pcb);
+void end_program(t_pcb *pcb, exitcode_t code) {
+	pcb->exitCode = code;
+	pcb = pbc_duplicate(pcb);
+	pcb_remove(pcb);
 	list_add(pcb_exit, pcb);
 
 	unsigned char buffer[BUFFER_CAPACITY];
@@ -40,21 +36,4 @@ void end_program(t_pcb *pcb) {
 	protocol_packet_receive(memfd);
 
 	log_inform("Program #%d ended", pcb->idProcess);
-}
-
-t_pcb *duplicate_pcb(t_pcb *pcb) {
-	t_pcb *dup = alloc(sizeof(t_pcb));
-	memcpy(dup, pcb, sizeof(t_pcb));
-	return dup;
-}
-
-void remove_pcb_from_lists(t_pcb *pcb) {
-	bool condition(void *elem) {
-		return elem == pcb;
-	}
-
-	t_list *lists[5] = {pcb_new, pcb_ready, pcb_exec, pcb_block, pcb_exit};
-	for(int i = 0; i < 5; i++) {
-		list_remove_and_destroy_by_condition(lists[i], condition, free);
-	}
 }

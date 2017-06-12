@@ -84,13 +84,9 @@ void destroy_console(t_client *client) {
 	list_remove_and_destroy_by_condition(consolas_conectadas, condition, free);
 	void iterator(void *ppid) {
 		int pid = (int)(int*) ppid;
-		t_pcb *pcb = get_pcb_by_pid(pid);
-		bool condition(void *elem) {
-			return elem == pcb;
-		}
-		if(pcb != NULL && list_find(pcb_exec, condition) == NULL) {
-			pcb->exitCode = EXIT_CONSOLE_KILLED;
-			end_program(pcb);
+		t_pcb *pcb = pbc_by_id(pid);
+		if(pcb != NULL && pcb_status(pcb) != EXEC) {
+			end_program(pcb, EXIT_CONSOLE_KILLED);
 		}
 	}
 	list_iterate(client->pids, iterator);

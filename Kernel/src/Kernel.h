@@ -32,6 +32,7 @@
 #include "server.h"
 #include "syscall.h"
 #include "exitcode.h"
+#include "pcbutils.h"
 
 enum {NEW, READY, EXEC, BLOCK, EXIT};
 
@@ -54,7 +55,5 @@ t_pcb* crear_pcb_proceso (t_metadata_program*);
 void gestion_datos_newPcb(packet_t, t_client*);
 
 void planificacion(socket_t);
-
-t_pcb *get_pcb_by_pid(int pid);
 
 #endif /* KERNEL_H_ */
