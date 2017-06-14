@@ -5,7 +5,7 @@
 
 string status_names[] = {"NEW", "READY", "EXEC", "BLOCK", "EXIT"};
 
-static t_list *status_queue(int status) {
+static mlist_t *status_queue(int status) {
 	switch(status) {
 	case NEW: return pcb_new;
 	case READY: return pcb_ready;
@@ -27,14 +27,13 @@ int pcb_status_from_name(string name) {
 }
 
 void pcb_print_status_queue(int status) {
-	int length = list_size(status_queue(status));
+	int length = mlist_length(status_queue(status));
 	printf("%s (%d)", pcb_status_name(status), length);
 	if(length > 0) printf(": ");
-	void iterator(void *elem) {
-		t_pcb *pcb = (t_pcb*) elem;
+	void iterator(t_pcb *pcb) {
 		printf("%d, ", pcb->idProcess);
 	}
-	list_iterate(status_queue(status), iterator);
+	mlist_traverse(status_queue(status), iterator);
 	if(length > 0) printf("\b\b\33[K");
 	printf("\n");
 }
@@ -44,12 +43,12 @@ string pcb_status_name(int status) {
 }
 
 t_pcb *pcb_by_id(int pid) {
-	bool condition(void *elem) {
-		return ((t_pcb*)elem)->idProcess == pid;
+	bool condition(t_pcb *elem) {
+		return elem->idProcess == pid;
 	}
 
 	for(int i = 0; i < NUMSTATUSES; i++) {
-		t_pcb *pcb = list_find(status_queue(i), condition);
+		t_pcb *pcb = mlist_find(status_queue(i), condition);
 		if(pcb != NULL) return pcb;
 	}
 
@@ -67,12 +66,12 @@ bool pcb_equals(t_pcb *pcb1, t_pcb *pcb2) {
 }
 
 int pcb_status(t_pcb *pcb) {
-	bool condition(void *elem) {
+	bool condition(t_pcb *elem) {
 		return pcb_equals(pcb, elem);
 	}
 
 	for(int i = 0; i < NUMSTATUSES; i++) {
-		t_pcb *res = list_find(status_queue(i), condition);
+		t_pcb *res = mlist_find(status_queue(i), condition);
 		if(res != NULL) return i;
 	}
 
@@ -86,6 +85,6 @@ void pcb_remove(t_pcb *pcb) {
 	}
 
 	for(int i = 0; i < NUMSTATUSES; i++) {
-		list_remove_and_destroy_by_condition(status_queue(i), condition, free);
+		mlist_remove(status_queue(i), condition, free);
 	}
 }

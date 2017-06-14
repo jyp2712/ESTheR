@@ -4,7 +4,7 @@
 typedef struct{
     socket_t clientID;
     unsigned char process;
-    t_list* pids;
+    mlist_t *pids;
 }t_client;
 
 void init_server(socket_t, socket_t);

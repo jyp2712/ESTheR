@@ -24,8 +24,8 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
 					t_client* cliente = alloc(sizeof(t_client));
 					cliente->clientID = cli_sock;
 					cliente->process= CONSOLE;
-					cliente->pids = list_create();
-					list_add(consolas_conectadas, cliente);
+					cliente->pids = mlist_create();
+					mlist_append(consolas_conectadas, cliente);
 					log_inform("Received handshake from %s", get_process_name(cli_process));
 				}
 				else if(cli_process == CPU) {
@@ -33,7 +33,7 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
 					t_client* cliente = alloc(sizeof(t_client));
 					cliente->clientID = cli_sock;
 					cliente->process= CPU;
-					list_add(cpu_conectadas, cliente);
+					mlist_append(cpu_conectadas, cliente);
 					log_inform("Received handshake from %s", get_process_name(cli_process));
 
 					log_inform("Envio stack size (%i) y tamaño de pagina (%i) a CPU", config->stack_size, config->page_size);
@@ -78,46 +78,48 @@ void init_server(socket_t mem_fd, socket_t fs_fd) {
 }
 
 void destroy_console(t_client *client) {
-	bool condition(void *elem) {
-		return elem == client;
+	bool condition(t_client *elem) {
+		return elem->clientID == client->clientID;
 	}
-	list_remove_and_destroy_by_condition(consolas_conectadas, condition, free);
-	void iterator(void *ppid) {
-		int pid = (int)(int*) ppid;
+	mlist_remove(consolas_conectadas, condition, NULL);
+	void iterator(int *ppid) {
+		int pid = (int) ppid;
 		t_pcb *pcb = pcb_by_id(pid);
 		if(pcb != NULL && pcb_status(pcb) != EXEC) {
 			end_program(pcb, EXIT_CONSOLE_KILLED);
 		}
 	}
-	list_iterate(client->pids, iterator);
+	mlist_traverse(client->pids, iterator);
+	mlist_destroy(client->pids, NULL);
+	free(client);
 }
 
-t_client* buscar_proceso (socket_t client){
+t_client* buscar_proceso(socket_t client) {
 	t_client* aux;
 
-	for (int i = 0; i < cpu_conectadas->elements_count; i++){
-		aux = list_get (cpu_conectadas, i);
+	for (int i = 0; i < mlist_length(cpu_conectadas); i++){
+		aux = mlist_get(cpu_conectadas, i);
 		if (aux->clientID == client) return aux;
 	}
 
-	for (int i = 0; i < cpu_executing->elements_count; i++){
-		aux = list_get (cpu_executing, i);
+	for (int i = 0; i < mlist_length(cpu_executing); i++){
+		aux = mlist_get(cpu_executing, i);
 		if (aux->clientID == client) return aux;
 	}
 
-	for (int i = 0; i < consolas_conectadas->elements_count; i++){
-		aux = list_get (consolas_conectadas, i);
+	for (int i = 0; i < mlist_length(consolas_conectadas); i++){
+		aux = mlist_get(consolas_conectadas, i);
 		if (aux->clientID == client) return aux;
 	}
 
 	return aux;
 }
 
-void restoreCPU(t_client* cpu){
-	bool getCPU (t_client* cpuToRestore){
-		return (cpuToRestore->clientID == cpu->clientID);
+void restoreCPU(t_client* cpu) {
+	bool getCPU(t_client* cpuToRestore) {
+		return cpuToRestore->clientID == cpu->clientID;
 	}
-	list_remove_by_condition(cpu_executing, (void*)getCPU);
-	list_add(cpu_conectadas, cpu);
+	mlist_remove(cpu_executing, getCPU, NULL);
+	mlist_append(cpu_conectadas, cpu);
 }
 

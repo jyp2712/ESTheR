@@ -26,7 +26,7 @@ void mlist_insert(mlist_t *list, int index, void *element);
 
 void mlist_extend(mlist_t *list, mlist_t *other);
 
-void mlist_remove(mlist_t *list, void *condition, void *destroyer);
+void *mlist_remove(mlist_t *list, void *condition, void *destroyer);
 
 void *mlist_pop(mlist_t *list, int index);
 

@@ -1,50 +1,63 @@
 #include "Kernel.h"
 #include <unistd.h>
 
-socket_t memfd;
+socket_t memfd, fsfd;
+int multipg_level;
 int generatorPid = 0;
 
 int main(int argc, char **argv) {
     guard(argc == 2, "Falta indicar ruta de archivo de configuración");
     config = get_config(argv[1]);
-    //config = get_config("metadata");
 
     set_current_process(KERNEL);
     title("KERNEL");
 
-	pthread_mutex_init(&mutex_planificacion, NULL);
-	pcb_ready = list_create();
-    pcb_new = list_create();
-    pcb_exec = list_create();
-    pcb_block = list_create();
-    pcb_exit = list_create();
-    consolas_conectadas = list_create();
-    cpu_conectadas = list_create ();
-    cpu_executing = list_create();
-    deadpid = list_create();
-    codes_ms = list_create();
-
-    title("Conexión");
-    printf("Estableciendo conexión con la Memoria...");
-    socket_t memoria_fd = socket_connect(config->ip_memoria, config->puerto_memoria);
-    protocol_handshake_send(memoria_fd);
-    printf("\33[2K\rConectado a la Memoria en %s:%s\n", config->ip_memoria, config->puerto_memoria);
-    memfd = memoria_fd;
-
-    packet_t packet = protocol_packet_receive(memoria_fd);
-    serial_unpack(packet.payload, "h", &config->page_size);
-
-//    Lo comento para que no joda. Total por ahora no lo necesitamos.
-//    printf("Estableciendo conexión con el File System...");
-    int fs_fd = 0; // socket_connect(kernel->ip_fs, kernel->puerto_fs);
-//    protocol_send_handshake(fs_fd);
-//    printf("\33[2K\rConectado al File System en %s:%s\n", kernel->ip_fs, kernel->puerto_fs);
+	init();
+	create_connections();
 
     thread_create(terminal);
-    init_server(memoria_fd, fs_fd);
+    init_server(memfd, fsfd);
 
-    free(config);
+    terminate();
     return 0;
+}
+
+void init() {
+	pthread_mutex_init(&mutex_planificacion, NULL);
+	pcb_ready = mlist_create();
+	pcb_new = mlist_create();
+	pcb_exec = mlist_create();
+	pcb_block = mlist_create();
+	pcb_exit = mlist_create();
+	consolas_conectadas = mlist_create();
+	cpu_conectadas = mlist_create ();
+	cpu_executing = mlist_create();
+	deadpid = mlist_create();
+	codes_ms = mlist_create();
+	multipg_level = config->grado_multiprog;
+}
+
+void create_connections() {
+	title("Conexión");
+	printf("Estableciendo conexión con la Memoria...");
+	memfd = socket_connect(config->ip_memoria, config->puerto_memoria);
+	protocol_handshake_send(memfd);
+	printf("\33[2K\rConectado a la Memoria en %s:%s\n", config->ip_memoria, config->puerto_memoria);
+
+	packet_t packet = protocol_packet_receive(memfd);
+	serial_unpack(packet.payload, "h", &config->page_size);
+
+	//    Lo comento para que no joda. Total por ahora no lo necesitamos.
+	//    printf("Estableciendo conexión con el File System...");
+	fsfd = 0; // socket_connect(kernel->ip_fs, kernel->puerto_fs);
+	//    protocol_send_handshake(fs_fd);
+	//    printf("\33[2K\rConectado al File System en %s:%s\n", kernel->ip_fs, kernel->puerto_fs);
+}
+
+void terminate() {
+//	socket_close(fsfd);
+	socket_close(memfd);
+	free(config);
 }
 
 t_pcb* crear_pcb_proceso(t_metadata_program* program) {
@@ -93,26 +106,28 @@ void gestion_datos_newPcb(packet_t program, t_client* console) {
     code->codigo = alloc(program.header.msgsize);
     memcpy(code->codigo, program.payload, program.header.msgsize);
     code->size = program.header.msgsize;
-    list_add(codes_ms, code);
+    mlist_append(codes_ms, code);
 
     header_t header_pid = protocol_header(OP_KE_SEND_PID);
     header_pid.usrpid = pcb->idProcess;
     packet_t packet = protocol_packet(header_pid);
     protocol_packet_send(packet, console->clientID);
-    list_add(console->pids, (int*)pcb->idProcess);
+    mlist_append(console->pids, (int*)pcb->idProcess);
 
-    list_add (pcb_new, pcb);
+    mlist_append(pcb_new, pcb);
 }
 
-void planificacion (socket_t server_socket){
+void planificacion(socket_t server_socket) {
     unsigned char buffer[BUFFER_CAPACITY];
 
-	if ((list_size(pcb_ready) + list_size(pcb_exec) + list_size(pcb_block)) < config->grado_multiprog && !list_is_empty(pcb_new)){
-		t_code_ms* code = list_remove(codes_ms, 0);
+    int progs_in_system = mlist_length(pcb_ready) + mlist_length(pcb_exec) + mlist_length(pcb_block);
+
+	if(progs_in_system < multipg_level && !mlist_empty(pcb_new)) {
+		t_code_ms* code = mlist_pop(codes_ms, 0);
 		//Obtengo paginas requeridas para el proceso y se lo solicito a memoria
         int pages = (code->size/config->page_size) + (code->size % config->page_size != 0) + config->stack_size;
 
-        t_pcb* pcb = list_remove (pcb_new, 0);
+        t_pcb* pcb = mlist_pop(pcb_new, 0);
 
         header_t headerMemoria = protocol_header(OP_ME_INIPRO, serial_pack(buffer, "h", pages));
         headerMemoria.usrpid = pcb->idProcess;
@@ -127,7 +142,7 @@ void planificacion (socket_t server_socket){
         serial_unpack(packetMemoria.payload, "h", &res);
         if (res) {
             pcb->pagesCode = pages - config->stack_size;
-    		list_add(pcb_ready, pcb);
+    		mlist_append(pcb_ready, pcb);
 
     		int tam = 0;
 			int size;
@@ -177,23 +192,23 @@ void planificacion (socket_t server_socket){
     		packetMemoria = protocol_packet_receive(server_socket);
         }else {
             pcb->exitCode = -1;
-            list_add(pcb_exit, pcb);
+            mlist_append(pcb_exit, pcb);
         }
     }
 
-    while (!list_is_empty(pcb_ready) && !list_is_empty(cpu_conectadas)){
+    while(!mlist_empty(pcb_ready) && !mlist_empty(cpu_conectadas)) {
         unsigned char buff[BUFFER_CAPACITY];
-        t_pcb* pcbToExec = list_remove(pcb_ready, 0);
+        t_pcb* pcbToExec = mlist_pop(pcb_ready, 0);
 
         header_t header_pcb = protocol_header (OP_KE_SEND_PCB);
         header_pcb.msgsize = serial_pack_pcb(pcbToExec, buff);
         packet_t packet_pcb = protocol_packet (header_pcb, buff);
 
-        t_client* cpu = list_remove(cpu_conectadas, 0);
+        t_client* cpu = mlist_pop(cpu_conectadas, 0);
         protocol_packet_send(packet_pcb, cpu->clientID);
 
-        list_add(pcb_exec, pcbToExec);
-        list_add (cpu_executing, cpu);
+        mlist_append(pcb_exec, pcbToExec);
+        mlist_append(cpu_executing, cpu);
     }
 }
 

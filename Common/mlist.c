@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
+#include "thread.h"
 
 #define is_empty(list) (list->length == 0)
 #define get_elem(node) (node != NULL ? node->elem : NULL)
@@ -98,14 +99,16 @@ void mlist_extend(mlist_t *list, mlist_t *other) {
 	mlist_traverse(other, routine);
 }
 
-void mlist_remove(mlist_t *list, void *condition, void *destroyer) {
+void *mlist_remove(mlist_t *list, void *condition, void *destroyer) {
 	bool (*cond)(void*) = condition;
 	void (*elem_fn)(void*) = destroyer;
-	if(elem_fn == NULL) elem_fn = free;
+
+	void *elem = NULL;
 	void node_fn(node_t *node) {
-		remove_node(list, node);
+		elem = remove_node(list, node);
 	}
 	traverse_nodes(list, node_fn, elem_fn, cond, false);
+	return elem;
 }
 
 void *mlist_pop(mlist_t *list, int index) {

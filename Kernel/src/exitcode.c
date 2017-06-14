@@ -7,7 +7,7 @@ void end_program(t_pcb *pcb, exitcode_t code) {
 	pcb->exitCode = code;
 	pcb = pcb_duplicate(pcb);
 	pcb_remove(pcb);
-	list_add(pcb_exit, pcb);
+	mlist_append(pcb_exit, pcb);
 
 	unsigned char buffer[BUFFER_CAPACITY];
 	int msgsize = serial_pack(buffer, "h", pcb->exitCode);
@@ -22,10 +22,10 @@ void end_program(t_pcb *pcb, exitcode_t code) {
 	}
 
 	bool get_client(t_client *client) {
-		return list_any_satisfy(client->pids, (void*) get_pid);
+		return mlist_any(client->pids, get_pid);
 	}
 
-	t_client *console = list_find(consolas_conectadas, (void*) get_client);
+	t_client *console = mlist_find(consolas_conectadas, get_client);
 
 	if(console != NULL) {
 		protocol_packet_send(packet, console->clientID);

@@ -16,7 +16,7 @@
 #include <parser/parser.h>
 #include <parser/metadata_program.h>
 #include <parser/sintax.h>
-#include <commons/collections/list.h>
+#include "mlist.h"
 #include "serial.h"
 #include "thread.h"
 #include "log.h"
@@ -43,11 +43,17 @@ typedef struct{
 
 pthread_mutex_t mutex_planificacion;
 
-t_list *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
-t_list *consolas_conectadas, *cpu_conectadas, *cpu_executing;
-t_list *deadpid, *codes_ms;
+mlist_t *pcb_ready, *pcb_new, *pcb_exec, *pcb_block, *pcb_exit;
+mlist_t *consolas_conectadas, *cpu_conectadas, *cpu_executing;
+mlist_t *deadpid, *codes_ms;
 
 extern socket_t memfd;
+extern int multipg_level;
+
+void init(void);
+void terminate(void);
+
+void create_connections(void);
 
 t_pcb* crear_pcb_proceso (t_metadata_program*);
 

@@ -41,65 +41,75 @@ void show_info(string arg) {
 	puts("[TODO]");
 }
 
+void set_multiprog_level(string arg) {
+	if(is_empty(arg)) {
+		printf("%d\n", multipg_level);
+		return;
+	}
+	int level = strtoi(arg);
+	if(level < 0) { puts("Valor inválido."); return; }
+	multipg_level = level;
+}
+
 void terminal() {
 	title("Consola");
 
 	while(true) {
 		string argument = input(command);
 		if(streq(command, "processlist")) {
-			for (int i = 0; i < pcb_exec->elements_count; i++){
-				t_pcb* aux = list_get (pcb_exec, i);
+			for (int i = 0; i < mlist_length(pcb_exec); i++){
+				t_pcb* aux = mlist_get(pcb_exec, i);
 				printf("PID: %d\n", aux->idProcess);
 			}
-			for (int i = 0; i < pcb_exit->elements_count; i++){
-				t_pcb* aux = list_get (pcb_exit, i);
+			for (int i = 0; i < mlist_length(pcb_exit); i++){
+				t_pcb* aux = mlist_get(pcb_exit, i);
 				printf("PID: %d\n", aux->idProcess);
 			}
-			for (int i = 0; i < pcb_new->elements_count; i++){
-				t_pcb* aux = list_get (pcb_new, i);
+			for (int i = 0; i < mlist_length(pcb_new); i++){
+				t_pcb* aux = mlist_get(pcb_new, i);
 				printf("PID: %d\n", aux->idProcess);
 			}
-			for (int i = 0; i < pcb_block->elements_count; i++){
-				t_pcb* aux = list_get (pcb_block, i);
+			for (int i = 0; i < mlist_length(pcb_block); i++){
+				t_pcb* aux = mlist_get(pcb_block, i);
 				printf("PID: %d\n", aux->idProcess);
 			}
-			for (int i = 0; i < pcb_ready->elements_count; i++){
-				t_pcb* aux = list_get (pcb_ready, i);
+			for (int i = 0; i < mlist_length(pcb_ready); i++){
+				t_pcb* aux = mlist_get(pcb_ready, i);
 				printf("PID: %d\n", aux->idProcess);
 			}
 		} else if(streq(command, "kill")) {
 			int pid = atoi(argument);
 			bool stop = 0;
 			while (!stop){
-				for (int i = 0; i < pcb_new->elements_count; i++){
-					t_pcb* aux = list_get (pcb_new, i);
+				for (int i = 0; i < mlist_length(pcb_new); i++){
+					t_pcb* aux = mlist_get(pcb_new, i);
 					if (aux->idProcess == pid){
-						aux = list_remove (pcb_new, i);
+						aux = mlist_pop(pcb_new, i);
 						aux->exitCode = -2;
 						aux->status = EXIT;
-						list_add (pcb_exit, aux);
+						mlist_append(pcb_exit, aux);
 						stop = 1;
 						break;
 					}
 				}
-				for (int i = 0; i < pcb_block->elements_count; i++){
-					t_pcb* aux = list_get (pcb_block, i);
+				for (int i = 0; i < mlist_length(pcb_block); i++){
+					t_pcb* aux = mlist_get(pcb_block, i);
 					if (aux->idProcess == pid){
-						aux = list_remove (pcb_block, i);
+						aux = mlist_pop(pcb_block, i);
 						aux->exitCode = -2;
 						aux->status = EXIT;
-						list_add (pcb_exit, aux);
+						mlist_append(pcb_exit, aux);
 						stop = 1;
 						break;
 					}
 				}
-				for (int i = 0; i < pcb_ready->elements_count; i++){
-					t_pcb* aux = list_get (pcb_ready, i);
+				for (int i = 0; i < mlist_length(pcb_ready); i++){
+					t_pcb* aux = mlist_get(pcb_ready, i);
 					if (aux->idProcess == pid){
-						aux = list_remove (pcb_ready, i);
+						aux = mlist_pop(pcb_ready, i);
 						aux->exitCode = -2;
 						aux->status = EXIT;
-						list_add (pcb_exit, aux);
+						mlist_append(pcb_exit, aux);
 						stop = 1;
 						break;
 					}
@@ -109,13 +119,15 @@ void terminal() {
 			pthread_mutex_lock(&mutex_planificacion);
 		} else if(streq(command, "restart")) {
 			pthread_mutex_unlock(&mutex_planificacion);
-		} else if (streq(command, "list")) {
+		} else if(streq(command, "list")) {
 			list_status_queues(argument);
-		} else if (streq(command, "info")) {
+		} else if(streq(command, "info")) {
 			show_info(argument);
+		} else if(streq(command, "multipg")) {
+			set_multiprog_level(argument);
 		} else if(streq(command, "help")) {
 			show_help();
-		} else{
+		} else {
 			puts("Comando no reconocido. Escriba 'help' para ayuda.");
 		}
 	}
